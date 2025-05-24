@@ -1,9 +1,15 @@
 import os
 import requests
 from urllib.parse import urlparse
+import sqlite3
+import argparse
+import json
 
 INPUT_FILE = '/Users/guolei/Downloads/all_videoss.txt'
 OUTPUT_DIR = 'downloaded_videos'
+DB_PATH = 'db.sqlite3'  # 默认django数据库路径
+SQL = "SELECT data FROM datapost_datapost ORDER BY id ASC"
+OUTPUT_TXT = 'output_videos.txt'
 
 def download_video(url, save_path):
     try:
@@ -37,10 +43,48 @@ def get_ext_from_url(url):
     else:
         return 'mp4'
 
-def main():
+def export_unique_videos_from_db():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    seen = set()
+    ordered = []
+    for row in cur.execute(SQL):
+        data = row[0]
+        if data not in seen:
+            seen.add(data)
+            ordered.append(data)
+    with open(OUTPUT_TXT, 'w', encoding='utf-8') as f:
+        for item in ordered:
+            f.write(item.strip() + '\n')
+    print(f'已导出去重数据到 {OUTPUT_TXT}')
+    conn.close()
+
+def export_unique_video_links_from_db():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    seen = set()
+    ordered = []
+    for row in cur.execute(SQL):
+        data = row[0]
+        try:
+            data_json = json.loads(data)
+            if isinstance(data_json, dict) and 'videos' in data_json:
+                for vurl in data_json['videos']:
+                    if vurl not in seen:
+                        seen.add(vurl)
+                        ordered.append(vurl)
+        except Exception:
+            continue
+    with open(OUTPUT_TXT, 'w', encoding='utf-8') as f:
+        for item in ordered:
+            f.write(item.strip() + '\n')
+    print(f'已导出去重视频链接到 {OUTPUT_TXT}')
+    conn.close()
+
+def main(input_file=INPUT_FILE):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
-    with open(INPUT_FILE, 'r', encoding='utf-8') as f:
+    with open(input_file, 'r', encoding='utf-8') as f:
         for idx, line in enumerate(f):
             url = line.strip()
             if not url:
@@ -50,4 +94,16 @@ def main():
             download_video(url, save_path)
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description='视频下载与数据导出工具')
+    parser.add_argument('--export', action='store_true', help='从sqlite导出去重数据到output_videos.txt')
+    parser.add_argument('--export-links', action='store_true', help='从sqlite导出去重视频链接到output_videos.txt')
+    parser.add_argument('--download', action='store_true', help='下载视频（默认）')
+    parser.add_argument('--input', type=str, default=INPUT_FILE, help='指定下载链接的输入文件，默认all_videoss.txt')
+    args = parser.parse_args()
+
+    if args.export:
+        export_unique_videos_from_db()
+    if args.export_links:
+        export_unique_video_links_from_db()
+    if args.download or not (args.export or args.export_links or args.download):
+        main(args.input)
