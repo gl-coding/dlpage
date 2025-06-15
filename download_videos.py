@@ -5,11 +5,11 @@ import sqlite3
 import argparse
 import json
 
-INPUT_FILE = '/Users/guolei/Downloads/all_videoss.txt'
 OUTPUT_DIR = 'downloaded_videos'
 DB_PATH = 'db.sqlite3'  # 默认django数据库路径
 SQL = "SELECT data FROM datapost_datapost ORDER BY id ASC"
 OUTPUT_TXT = 'output_videos.txt'
+INPUT_FILE = OUTPUT_TXT
 
 def download_video(url, save_path):
     try:
@@ -81,6 +81,48 @@ def export_unique_video_links_from_db():
     print(f'已导出去重视频链接到 {OUTPUT_TXT}')
     conn.close()
 
+def read_video_list_json(json_file):
+    """读取 video_list_export.json 格式的文件并返回视频链接列表"""
+    try:
+        with open(json_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        if isinstance(data, dict) and 'videos' in data:
+            videos = data['videos']
+            print(f'从 {json_file} 读取到 {len(videos)} 个视频链接')
+            return videos
+        else:
+            print(f'错误：{json_file} 格式不正确，缺少 videos 字段')
+            return []
+    except FileNotFoundError:
+        print(f'错误：文件 {json_file} 不存在')
+        return []
+    except json.JSONDecodeError as e:
+        print(f'错误：{json_file} 不是有效的JSON文件: {e}')
+        return []
+    except Exception as e:
+        print(f'读取文件 {json_file} 时出错: {e}')
+        return []
+
+def download_from_json(json_file):
+    """从JSON文件读取视频链接并下载"""
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    
+    videos = read_video_list_json(json_file)
+    if not videos:
+        print('没有找到可下载的视频链接')
+        return
+    
+    print(f'开始下载 {len(videos)} 个视频...')
+    for idx, url in enumerate(videos, 1):
+        if not url.strip():
+            continue
+        ext = get_ext_from_url(url)
+        save_path = os.path.join(OUTPUT_DIR, f'video_{idx:04d}.{ext}')
+        print(f'[{idx}/{len(videos)}] 下载: {url}')
+        download_video(url, save_path)
+
 def main(input_file=INPUT_FILE):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
@@ -98,12 +140,15 @@ if __name__ == '__main__':
     parser.add_argument('--export', action='store_true', help='从sqlite导出去重数据到output_videos.txt')
     parser.add_argument('--export-links', action='store_true', help='从sqlite导出去重视频链接到output_videos.txt')
     parser.add_argument('--download', action='store_true', help='下载视频（默认）')
-    parser.add_argument('--input', type=str, default=INPUT_FILE, help='指定下载链接的输入文件，默认all_videoss.txt')
+    parser.add_argument('--json', type=str, help='从JSON文件读取视频链接并下载（如：video_list_export.json）')
+    parser.add_argument('--input', type=str, default=INPUT_FILE, help='指定下载链接的输入文件，默认output_videos.txt')
     args = parser.parse_args()
 
     if args.export:
         export_unique_videos_from_db()
     if args.export_links:
         export_unique_video_links_from_db()
-    if args.download or not (args.export or args.export_links or args.download):
+    if args.json:
+        download_from_json(args.json)
+    elif args.download or not (args.export or args.export_links or args.json):
         main(args.input)
