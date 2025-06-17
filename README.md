@@ -155,6 +155,33 @@
 - `datapost/`        业务app，包含模型、视图、路由
 - `manage.py`        Django管理脚本
 - `download_videos.py` 视频下载工具脚本
+- `config.json`      配置文件，包含API地址等设置
+
+## 配置文件
+
+项目使用`config.json`文件存储配置信息，主要包括：
+
+```json
+{
+  "API_ENDPOINT": "https://aliyun.ideapool.club/datapost/api/",
+  "LOCAL_API_ENDPOINT": "http://127.0.0.1:8000/datapost/api/",
+  "OUTPUT_DIR": "downloaded_videos",
+  "DB_PATH": "db.sqlite3",
+  "OUTPUT_TXT": "output_videos.txt"
+}
+```
+
+可以根据需要修改配置文件中的值，程序会自动加载这些设置。
+
+### 切换API地址
+
+如果需要在本地开发环境和生产环境之间切换API地址，可以：
+
+1. 直接修改`config.json`文件中的`API_ENDPOINT`值
+2. 使用命令行参数临时指定API地址：
+   ```bash
+   python download_videos.py --api --api-url http://127.0.0.1:8000/datapost/api/
+   ```
 
 ## 视频下载工具
 

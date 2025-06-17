@@ -6,13 +6,27 @@ import argparse
 import json
 import datetime
 
-OUTPUT_DIR = 'downloaded_videos'
-DB_PATH = 'db.sqlite3'  # 默认django数据库路径
+# 加载配置文件
+CONFIG_FILE = 'config.json'
+config = {}
+
+try:
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        print(f'已从 {CONFIG_FILE} 加载配置')
+    else:
+        print(f'警告：配置文件 {CONFIG_FILE} 不存在，将使用默认配置')
+except Exception as e:
+    print(f'加载配置文件出错: {e}，将使用默认配置')
+
+# 设置默认值和从配置文件加载的值
+OUTPUT_DIR = config.get('OUTPUT_DIR', 'downloaded_videos')
+DB_PATH = config.get('DB_PATH', 'db.sqlite3')  # 默认django数据库路径
 SQL = "SELECT data FROM datapost_datapost ORDER BY id ASC"
-OUTPUT_TXT = 'output_videos.txt'
+OUTPUT_TXT = config.get('OUTPUT_TXT', 'output_videos.txt')
 INPUT_FILE = OUTPUT_TXT
-API_ENDPOINT = 'https://aliyun.ideapool.club/datapost/api/'  # 默认API接口地址
-#API_ENDPOINT = 'http://127.0.0.1:8000/datapost/api/'  # 默认API接口地址
+API_ENDPOINT = config.get('API_ENDPOINT', 'https://aliyun.ideapool.club/datapost/api/')  # 默认API接口地址
 
 def download_video(url, save_path):
     try:
@@ -266,7 +280,7 @@ if __name__ == '__main__':
     parser.add_argument('--download', action='store_true', help='下载视频（默认）')
     parser.add_argument('--json', type=str, help='从JSON文件读取视频链接并下载（如：video_list_export.json）')
     parser.add_argument('--api', action='store_true', help='从API接口读取视频链接并下载')
-    parser.add_argument('--api-url', type=str, default=API_ENDPOINT, help=f'指定API接口地址，默认为 {API_ENDPOINT}')
+    parser.add_argument('--api-url', type=str, default=API_ENDPOINT, help=f'指定API接口地址，默认从config.json加载，当前为 {API_ENDPOINT}')
     parser.add_argument('--input', type=str, default=INPUT_FILE, help='指定下载链接的输入文件，默认output_videos.txt')
     parser.add_argument('--save-json', action='store_true', help='使用--api选项时，保存API返回的JSON数据和视频列表到本地')
     parser.add_argument('--only-save', action='store_true', help='仅保存API返回的JSON数据和视频列表，不下载视频')

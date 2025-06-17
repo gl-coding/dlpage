@@ -1,0 +1,7 @@
+{
+  "API_ENDPOINT": "https://aliyun.ideapool.club/datapost/api/",
+  "LOCAL_API_ENDPOINT": "http://127.0.0.1:8000/datapost/api/",
+  "OUTPUT_DIR": "downloaded_videos",
+  "DB_PATH": "db.sqlite3",
+  "OUTPUT_TXT": "output_videos.txt"
+} 
