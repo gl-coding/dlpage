@@ -10,6 +10,8 @@ DB_PATH = 'db.sqlite3'  # 默认django数据库路径
 SQL = "SELECT data FROM datapost_datapost ORDER BY id ASC"
 OUTPUT_TXT = 'output_videos.txt'
 INPUT_FILE = OUTPUT_TXT
+#API_ENDPOINT = 'https://aliyun.ideapool.club/datapost/api/'  # 默认API接口地址
+API_ENDPOINT = 'http://127.0.0.1:8000/datapost/api/'  # 默认API接口地址
 
 def download_video(url, save_path):
     try:
@@ -123,6 +125,53 @@ def download_from_json(json_file):
         print(f'[{idx}/{len(videos)}] 下载: {url}')
         download_video(url, save_path)
 
+def fetch_videos_from_api(api_url):
+    """从API接口获取JSON数据并提取视频链接"""
+    try:
+        print(f'正在从API接口获取数据: {api_url}')
+        response = requests.get(api_url, timeout=30)
+        response.raise_for_status()
+        
+        data = response.json()
+        if isinstance(data, dict) and 'videos' in data:
+            videos = data['videos']
+            total = data.get('total_videos', len(videos))
+            print(f'从API接口获取到 {total} 个视频链接')
+            return videos
+        else:
+            print(f'错误：API返回格式不正确，缺少 videos 字段')
+            print(f'API返回内容: {response.text[:200]}...')
+            return []
+    except requests.RequestException as e:
+        print(f'API请求失败: {e}')
+        return []
+    except json.JSONDecodeError as e:
+        print(f'API返回的不是有效的JSON数据: {e}')
+        print(f'API返回内容: {response.text[:200]}...')
+        return []
+    except Exception as e:
+        print(f'从API获取数据时出错: {e}')
+        return []
+
+def download_from_api(api_url):
+    """从API接口获取视频链接并下载"""
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+    
+    videos = fetch_videos_from_api(api_url)
+    if not videos:
+        print('没有找到可下载的视频链接')
+        return
+    
+    print(f'开始下载 {len(videos)} 个视频...')
+    for idx, url in enumerate(videos, 1):
+        if not url.strip():
+            continue
+        ext = get_ext_from_url(url)
+        save_path = os.path.join(OUTPUT_DIR, f'video_{idx:04d}.{ext}')
+        print(f'[{idx}/{len(videos)}] 下载: {url}')
+        download_video(url, save_path)
+
 def main(input_file=INPUT_FILE):
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
@@ -141,6 +190,8 @@ if __name__ == '__main__':
     parser.add_argument('--export-links', action='store_true', help='从sqlite导出去重视频链接到output_videos.txt')
     parser.add_argument('--download', action='store_true', help='下载视频（默认）')
     parser.add_argument('--json', type=str, help='从JSON文件读取视频链接并下载（如：video_list_export.json）')
+    parser.add_argument('--api', action='store_true', help='从API接口读取视频链接并下载')
+    parser.add_argument('--api-url', type=str, default=API_ENDPOINT, help=f'指定API接口地址，默认为 {API_ENDPOINT}')
     parser.add_argument('--input', type=str, default=INPUT_FILE, help='指定下载链接的输入文件，默认output_videos.txt')
     args = parser.parse_args()
 
@@ -148,7 +199,9 @@ if __name__ == '__main__':
         export_unique_videos_from_db()
     if args.export_links:
         export_unique_video_links_from_db()
-    if args.json:
+    if args.api:
+        download_from_api(args.api_url)
+    elif args.json:
         download_from_json(args.json)
-    elif args.download or not (args.export or args.export_links or args.json):
+    elif args.download or not (args.export or args.export_links or args.json or args.api):
         main(args.input)

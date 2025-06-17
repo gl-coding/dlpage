@@ -57,6 +57,48 @@
   {"status": "success", "message": "id=1 已删除"}
   ```
 
+### 5. 导出视频列表接口
+- **URL**：`/datapost/export/`
+- **方法**：GET
+- **功能**：导出所有视频链接为JSON文件
+- **返回**：JSON文件下载（文件名：video_list_export.json）
+- **数据格式**：
+  ```json
+  {
+    "total_videos": 5,
+    "export_time": "2024-01-01T12:00:00.000000",
+    "videos": [
+      "https://example.com/video1.mp4",
+      "https://example.com/video2.mp4"
+    ]
+  }
+  ```
+
+### 6. JSON数据展示页面
+- **URL**：`/datapost/json/`
+- **方法**：GET
+- **功能**：在网页上美观展示JSON格式的视频数据
+- **页面功能**：
+  - 复制JSON数据按钮
+  - 下载JSON文件链接
+  - 返回数据列表链接
+
+### 7. 纯JSON数据接口
+- **URL**：`/datapost/api/`
+- **方法**：GET
+- **功能**：返回纯JSON格式的视频列表数据，适用于API调用
+- **返回示例**：
+  ```json
+  {
+    "total_videos": 5,
+    "export_time": "2024-01-01T12:00:00.000000",
+    "videos": [
+      "https://example.com/video1.mp4",
+      "https://example.com/video2.mp4"
+    ]
+  }
+  ```
+
 ## 管理后台
 - **URL**：`/admin/`
 - **说明**：可在Django后台管理所有数据（需创建超级用户）
@@ -98,12 +140,57 @@
      ```bash
      curl -X POST http://127.0.0.1:8000/datapost/delete/ -d '{"id": 1}' -H "Content-Type: application/json"
      ```
+   - 获取纯JSON数据：
+     ```bash
+     curl http://127.0.0.1:8000/datapost/api/
+     ```
+   - 下载JSON文件：
+     ```bash
+     curl -O -J -L http://127.0.0.1:8000/datapost/export/
+     ```
 
 ## 目录结构简述
 
 - `backend/`         Django主项目目录
 - `datapost/`        业务app，包含模型、视图、路由
 - `manage.py`        Django管理脚本
+- `download_videos.py` 视频下载工具脚本
+
+## 视频下载工具
+
+项目提供了一个 `download_videos.py` 脚本，用于从不同来源获取视频链接并下载视频：
+
+### 功能选项
+
+1. **从数据库导出数据**
+   ```bash
+   python download_videos.py --export
+   ```
+
+2. **从数据库导出视频链接**
+   ```bash
+   python download_videos.py --export-links
+   ```
+
+3. **从文本文件下载视频**
+   ```bash
+   python download_videos.py --download --input video_links.txt
+   ```
+
+4. **从JSON文件下载视频**
+   ```bash
+   python download_videos.py --json video_list_export.json
+   ```
+
+5. **从API接口下载视频**
+   ```bash
+   python download_videos.py --api
+   ```
+   
+   自定义API地址：
+   ```bash
+   python download_videos.py --api --api-url http://example.com/datapost/api/
+   ```
 
 ## 其它说明
 - 支持任意格式数据存储，推荐JSON格式，页面会自动解析`videos`字段。
