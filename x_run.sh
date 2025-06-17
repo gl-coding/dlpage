@@ -1,4 +1,5 @@
 function run_server() {
+    ps -ef | grep python | grep runserver | awk '{print $2}' | xargs kill -9
     nohup python3 manage.py runserver &
 }
 
