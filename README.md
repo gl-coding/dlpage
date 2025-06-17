@@ -192,6 +192,29 @@
    python download_videos.py --api --api-url http://example.com/datapost/api/
    ```
 
+6. **从API接口获取数据并保存到本地**
+   ```bash
+   python download_videos.py --api --save-json
+   ```
+   此命令会同时保存完整JSON数据和提取的视频列表到本地文件，并下载视频。
+
+7. **仅保存API数据而不下载视频**
+   ```bash
+   python download_videos.py --api --only-save
+   ```
+   此命令会保存完整JSON数据和提取的视频列表到本地文件，但不会下载视频。
+
+8. **保存下载映射关系**
+   ```bash
+   python download_videos.py --api --mapping download_map.txt
+   ```
+   此命令会在下载视频的同时，将视频URL、保存路径和下载状态以`url \t path \t 是否下载成功`的格式保存到指定文件。
+   
+   也可与其他命令组合使用：
+   ```bash
+   python download_videos.py --json video_list.json --mapping download_map.txt
+   ```
+
 ## 其它说明
 - 支持任意格式数据存储，推荐JSON格式，页面会自动解析`videos`字段。
 - 如需扩展其它字段或功能，请修改`datapost/models.py`和相关视图。

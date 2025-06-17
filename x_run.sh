@@ -14,6 +14,10 @@ function download_from_links() {
     python download_videos.py --download
 }
 
+function download_from_api() {
+    python download_videos.py --api --mapping download_mapping.txt
+}
+
 case $1 in
     "server")
         run_server
@@ -26,6 +30,9 @@ case $1 in
         ;;
     "dlurl")
         download_from_links
+        ;;
+    "dlapi")
+        download_from_api
         ;;
     *)
         echo "Usage: $0 {server|download}"
