@@ -8,21 +8,45 @@ import sys
 import os
 import time
 
-def post_video_text(server_url, video_url, text_content):
+# 配置文件路径
+CONFIG_FILE = 'config.json'
+
+# 加载配置文件
+def load_config():
+    config = {}
+    try:
+        if os.path.exists(CONFIG_FILE):
+            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+            print(f'已从 {CONFIG_FILE} 加载配置')
+        else:
+            print(f'警告：配置文件 {CONFIG_FILE} 不存在，将使用默认配置')
+    except Exception as e:
+        print(f'加载配置文件出错: {e}，将使用默认配置')
+    
+    return config
+
+# 获取配置
+config = load_config()
+
+# 设置默认值和从配置文件加载的值
+DEFAULT_API_URL = 'http://127.0.0.1:8000/datapost/video-text/'
+# 优先使用VIDEO_TEXT_API_ENDPOINT配置项
+VIDEO_TEXT_API = config.get('VIDEO_TEXT_API_ENDPOINT', DEFAULT_API_URL)
+LOCAL_VIDEO_TEXT_API = config.get('LOCAL_VIDEO_TEXT_API_ENDPOINT', DEFAULT_API_URL)
+
+def post_video_text(api_url, video_url, text_content):
     """
     向服务器发送视频URL和对应的文本内容
     
     Args:
-        server_url: 服务器地址，例如 http://127.0.0.1:8000
+        api_url: API端点URL，例如 http://127.0.0.1:8000/datapost/video-text/
         video_url: 视频的URL
         text_content: 视频对应的文本内容
     
     Returns:
         (success, result) 元组
     """
-    # 构建完整的API端点URL
-    api_endpoint = f"{server_url}/datapost/video-text/"
-    
     # 准备请求数据
     payload = {
         "video_url": video_url,
@@ -37,7 +61,7 @@ def post_video_text(server_url, video_url, text_content):
     try:
         # 发送POST请求
         response = requests.post(
-            api_endpoint, 
+            api_url, 
             data=json.dumps(payload), 
             headers=headers
         )
@@ -85,13 +109,13 @@ def process_file(file_path):
         print(f"处理文件 {file_path} 时出错: {e}")
         return None, None
 
-def process_directory(dir_path, server_url, delay=0.5):
+def process_directory(dir_path, api_url, delay=0.5):
     """
     处理目录中的所有文件
     
     Args:
         dir_path: 目录路径
-        server_url: 服务器地址
+        api_url: API端点URL
         delay: 请求间隔时间(秒)
     
     Returns:
@@ -118,7 +142,7 @@ def process_directory(dir_path, server_url, delay=0.5):
             print(f"  URL: {video_url[:50]}...")
             print(f"  文本长度: {len(text_content)} 字符")
             
-            success, result = post_video_text(server_url, video_url, text_content)
+            success, result = post_video_text(api_url, video_url, text_content)
             
             if success:
                 success_count += 1
@@ -137,12 +161,17 @@ def process_directory(dir_path, server_url, delay=0.5):
 
 def main():
     parser = argparse.ArgumentParser(description='上传视频URL和文本到服务器')
-    parser.add_argument('--server', type=str, default='http://127.0.0.1:8000', 
-                        help='服务器地址 (默认: http://127.0.0.1:8000)')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--api', action='store_true', default=True,
+                       help='使用远程API端点 (VIDEO_TEXT_API_ENDPOINT，默认)')
+    group.add_argument('--local', action='store_true',
+                       help='使用本地API端点 (LOCAL_VIDEO_TEXT_API_ENDPOINT)')
     parser.add_argument('--file', type=str, help='单个文件路径，第一行是URL，后续行是文本内容')
     parser.add_argument('--dir', type=str, help='目录路径，处理目录中的所有文件')
     parser.add_argument('--delay', type=float, default=0.5, 
                         help='处理多个文件时，每次请求间隔的延迟时间(秒) (默认: 0.5)')
+    parser.add_argument('--url', type=str, 
+                        help='手动指定API端点URL，覆盖配置文件设置')
     
     args = parser.parse_args()
     
@@ -154,6 +183,13 @@ def main():
     if args.file and args.dir:
         print("警告: 同时提供了--file和--dir参数，将只处理--file")
     
+    # 确定API端点
+    api_url = args.url if args.url else (LOCAL_VIDEO_TEXT_API if args.local else VIDEO_TEXT_API)
+    
+    # 显示使用的API端点
+    api_type = "本地" if args.local else "远程"
+    print(f"使用{api_type}API端点: {api_url}")
+    
     # 处理单个文件
     if args.file:
         print(f"处理文件: {args.file}")
@@ -163,7 +199,7 @@ def main():
             print(f"URL: {video_url}")
             print(f"文本长度: {len(text_content)} 字符")
             
-            success, result = post_video_text(args.server, video_url, text_content)
+            success, result = post_video_text(api_url, video_url, text_content)
             
             if success:
                 print(f"上传成功: {result}")
@@ -177,7 +213,7 @@ def main():
     # 处理目录
     elif args.dir:
         print(f"处理目录: {args.dir}")
-        success_count, fail_count = process_directory(args.dir, args.server, args.delay)
+        success_count, fail_count = process_directory(args.dir, api_url, args.delay)
         
         print(f"\n处理完成: 成功 {success_count} 个文件，失败 {fail_count} 个文件")
         

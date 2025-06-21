@@ -35,7 +35,7 @@ function all() {
         cd video_audio2txt
         sh x_run_all.sh
         cd ..
-        upload_video_text
+        #upload_video_text
         mv x_status x_status.old
     fi
 }
