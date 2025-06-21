@@ -100,12 +100,131 @@
   }
   ```
 
-### 视频文本数据接口
+### 8. 视频文本数据接口
 
-- `POST /datapost/video-text/`: 接收视频URL和对应的文本内容
-- `GET /datapost/video-text/show/`: 展示所有视频文本数据
-- `POST /datapost/video-text/delete/`: 删除指定ID的视频文本数据
-- `GET /datapost/video-text/export/`: 导出所有视频文本数据为JSON文件
+- **视频文本上传接口**
+  - **URL**：`/datapost/video-text/`
+  - **方法**：POST
+  - **功能**：接收视频URL和对应的文本内容
+  - **请求体**：JSON格式，包含video_url和text_content字段
+  - **示例**：
+    ```json
+    {
+      "video_url": "https://example.com/video1.mp4",
+      "text_content": "这是视频的文本内容"
+    }
+    ```
+  - **返回**：
+    ```json
+    {
+      "status": "success",
+      "message": "视频文本数据已保存"
+    }
+    ```
+
+- **视频文本展示页面**
+  - **URL**：`/datapost/video-text/show/`
+  - **方法**：GET
+  - **功能**：展示所有视频文本数据，包括视频播放器和对应文本内容
+  - **页面功能**：
+    - 复制文本内容按钮
+    - 删除单条数据按钮
+    - 清空所有数据按钮
+    - 导出数据按钮
+    - 创建时间戳文件按钮
+    - API接口链接
+
+- **视频文本删除接口**
+  - **URL**：`/datapost/video-text/delete/`
+  - **方法**：POST
+  - **功能**：删除指定ID的视频文本数据
+  - **请求体**：JSON，包含要删除数据的id
+    ```json
+    {"id": 1}
+    ```
+  - **返回**：
+    ```json
+    {"status": "success", "message": "id=1 已删除"}
+    ```
+
+- **视频文本清空接口**
+  - **URL**：`/datapost/video-text/clear/`
+  - **方法**：POST
+  - **功能**：清空所有视频文本数据
+  - **返回**：
+    ```json
+    {
+      "status": "success", 
+      "message": "所有视频文本数据已清除，共删除 X 条记录"
+    }
+    ```
+
+- **视频文本导出接口**
+  - **URL**：`/datapost/video-text/export/`
+  - **方法**：GET
+  - **功能**：导出所有视频文本数据为JSON文件
+  - **返回**：JSON文件下载（文件名：video_text_export.json）
+  - **数据格式**：
+    ```json
+    {
+      "total": 5,
+      "export_time": "2024-01-01T12:00:00.000000",
+      "items": [
+        {
+          "video_url": "https://example.com/video1.mp4",
+          "text_content": "这是视频1的文本内容",
+          "created_at": "2024-01-01T12:00:00.000000"
+        },
+        {
+          "video_url": "https://example.com/video2.mp4",
+          "text_content": "这是视频2的文本内容",
+          "created_at": "2024-01-01T12:00:00.000000"
+        }
+      ]
+    }
+    ```
+
+- **视频文本API接口**
+  - **URL**：`/datapost/video-text/api/`
+  - **方法**：GET
+  - **功能**：返回视频文本数据的JSON格式，支持分页
+  - **参数**：
+    - `page`：页码，默认为1
+    - `page_size`：每页条数，默认为50，最大为200
+  - **返回示例**：
+    ```json
+    {
+      "status": "success",
+      "total_count": 10,
+      "page": 1,
+      "page_size": 50,
+      "total_pages": 1,
+      "has_next": false,
+      "has_previous": false,
+      "items": [
+        {
+          "id": 1,
+          "video_url": "https://example.com/video1.mp4",
+          "text_content": "这是视频1的文本内容",
+          "created_at": "2024-01-01T12:00:00.000000"
+        }
+      ]
+    }
+    ```
+
+- **创建时间戳文件接口**
+  - **URL**：`/datapost/create-timestamp-file/`
+  - **方法**：POST
+  - **功能**：在服务器当前目录创建或更新一个包含时间戳的文件
+  - **返回**：
+    ```json
+    {
+      "status": "success",
+      "message": "已更新文件: timestamp.txt",
+      "file_path": "/path/to/timestamp.txt",
+      "timestamp": 1625097600
+    }
+    ```
 
 ## 管理后台
 - **URL**：`/admin/`
@@ -140,6 +259,10 @@
      ```bash
      curl -X POST http://127.0.0.1:8000/datapost/ -d '{"videos": ["https://example.com/video1.mp4"]}' -H "Content-Type: application/json"
      ```
+   - 上传视频文本数据：
+     ```bash
+     curl -X POST http://127.0.0.1:8000/datapost/video-text/ -d '{"video_url": "https://example.com/video1.mp4", "text_content": "这是视频的文本内容"}' -H "Content-Type: application/json"
+     ```
    - 清空数据：
      ```bash
      curl -X POST http://127.0.0.1:8000/datapost/clear/
@@ -163,6 +286,7 @@
 - `datapost/`        业务app，包含模型、视图、路由
 - `manage.py`        Django管理脚本
 - `download_videos.py` 视频下载工具脚本
+- `upload_video_text.py` 视频文本上传工具脚本
 - `config.json`      配置文件，包含API地址等设置
 
 ## 配置文件
@@ -173,6 +297,8 @@
 {
   "API_ENDPOINT": "https://aliyun.ideapool.club/datapost/api/",
   "LOCAL_API_ENDPOINT": "http://127.0.0.1:8000/datapost/api/",
+  "VIDEO_TEXT_API_ENDPOINT": "https://aliyun.ideapool.club/datapost/video-text/",
+  "LOCAL_VIDEO_TEXT_API_ENDPOINT": "http://127.0.0.1:8000/datapost/video-text/",
   "OUTPUT_DIR": "downloaded_videos",
   "DB_PATH": "db.sqlite3",
   "OUTPUT_TXT": "output_videos.txt"
@@ -185,11 +311,8 @@
 
 如果需要在本地开发环境和生产环境之间切换API地址，可以：
 
-1. 直接修改`config.json`文件中的`API_ENDPOINT`值
-2. 使用命令行参数临时指定API地址：
-   ```bash
-   python download_videos.py --api --api-url http://127.0.0.1:8000/datapost/api/
-   ```
+1. 直接修改`config.json`文件中的相应配置项
+2. 使用命令行参数临时指定API地址
 
 ## 视频下载工具
 
@@ -250,62 +373,60 @@
    python download_videos.py --json video_list.json --mapping download_map.txt
    ```
 
-## 客户端工具
+## 视频文本上传工具
 
-### 视频文本上传工具
+项目提供了 `upload_video_text.py` 脚本，用于上传视频URL和对应的文本内容。该脚本支持特定格式的文件，其中第一行是视频URL，后续行是文本内容。
 
-#### 单条上传
+### 功能选项
 
-`video_text_client.py` 是一个命令行工具，用于向服务器发送单条视频URL和文本内容。
+1. **上传单个文件**
+   ```bash
+   python upload_video_text.py --file video_text_file.txt
+   ```
+   
+   文件格式示例：
+   ```
+   https://example.com/video1.mp4
+   这是视频的文本内容，
+   可以包含多行文本。
+   这些文本将作为一个整体发送到服务器。
+   ```
 
-用法：
-```
-python video_text_client.py --video VIDEO_URL [选项]
-```
+2. **处理整个目录中的文件**
+   ```bash
+   python upload_video_text.py --dir ./video_text_files/
+   ```
+   此命令会处理指定目录中的所有文件，每个文件的格式应与上述示例相同。
 
-选项：
-- `--server URL`: 服务器地址，默认为 http://127.0.0.1:8000
-- `--video URL`: 视频URL（必需）
-- `--text TEXT`: 视频对应的文本内容
-- `--file FILE`: 从文件读取文本内容
+3. **使用远程API端点（默认）**
+   ```bash
+   python upload_video_text.py --api --file video_text_file.txt
+   ```
+   使用配置文件中的 `VIDEO_TEXT_API_ENDPOINT` 值作为API端点。
 
-#### 批量上传
+4. **使用本地API端点**
+   ```bash
+   python upload_video_text.py --local --file video_text_file.txt
+   ```
+   使用配置文件中的 `LOCAL_VIDEO_TEXT_API_ENDPOINT` 值作为API端点。
 
-`batch_upload_video_text.py` 是一个命令行工具，用于批量上传视频URL和文本内容。
+5. **手动指定API端点**
+   ```bash
+   python upload_video_text.py --url http://example.com/datapost/video-text/ --file video_text_file.txt
+   ```
 
-用法：
-```
-python batch_upload_video_text.py [--csv FILE | --json FILE] [选项]
-```
+6. **设置请求间隔时间**
+   ```bash
+   python upload_video_text.py --dir ./video_text_files/ --delay 1.0
+   ```
+   处理多个文件时，每次请求之间的延迟时间（秒），默认为0.5秒。
 
-选项：
-- `--server URL`: 服务器地址，默认为 http://127.0.0.1:8000
-- `--csv FILE`: CSV文件路径，包含video_url和text_content列
-- `--json FILE`: JSON文件路径，包含视频URL和文本内容
-- `--delay SECONDS`: 每次请求间隔的延迟时间(秒)，默认为0.5
+### 配置文件集成
 
-CSV文件格式示例：
-```
-video_url,text_content
-https://example.com/video1.mp4,这是视频1的文本描述
-https://example.com/video2.mp4,这是视频2的文本描述
-```
+`upload_video_text.py` 脚本会自动从 `config.json` 文件中读取配置：
 
-JSON文件格式示例：
-```json
-{
-  "items": [
-    {
-      "video_url": "https://example.com/video1.mp4",
-      "text_content": "这是视频1的文本描述"
-    },
-    {
-      "video_url": "https://example.com/video2.mp4",
-      "text_content": "这是视频2的文本描述"
-    }
-  ]
-}
-```
+- `VIDEO_TEXT_API_ENDPOINT`：远程API端点地址（默认使用）
+- `LOCAL_VIDEO_TEXT_API_ENDPOINT`：本地API端点地址（使用 `--local` 参数时）
 
 ## 其它说明
 - 支持任意格式数据存储，推荐JSON格式，页面会自动解析`videos`字段。
