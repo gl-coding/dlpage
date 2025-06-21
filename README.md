@@ -7,6 +7,7 @@
 - 支持一键清空所有数据。
 - 支持单条数据删除。
 - 管理后台可查看和管理所有数据。
+- 支持视频链接与文本内容的关联存储和展示。
 
 ## 接口说明
 
@@ -98,6 +99,13 @@
     ]
   }
   ```
+
+### 视频文本数据接口
+
+- `POST /datapost/video-text/`: 接收视频URL和对应的文本内容
+- `GET /datapost/video-text/show/`: 展示所有视频文本数据
+- `POST /datapost/video-text/delete/`: 删除指定ID的视频文本数据
+- `GET /datapost/video-text/export/`: 导出所有视频文本数据为JSON文件
 
 ## 管理后台
 - **URL**：`/admin/`
@@ -241,6 +249,63 @@
    ```bash
    python download_videos.py --json video_list.json --mapping download_map.txt
    ```
+
+## 客户端工具
+
+### 视频文本上传工具
+
+#### 单条上传
+
+`video_text_client.py` 是一个命令行工具，用于向服务器发送单条视频URL和文本内容。
+
+用法：
+```
+python video_text_client.py --video VIDEO_URL [选项]
+```
+
+选项：
+- `--server URL`: 服务器地址，默认为 http://127.0.0.1:8000
+- `--video URL`: 视频URL（必需）
+- `--text TEXT`: 视频对应的文本内容
+- `--file FILE`: 从文件读取文本内容
+
+#### 批量上传
+
+`batch_upload_video_text.py` 是一个命令行工具，用于批量上传视频URL和文本内容。
+
+用法：
+```
+python batch_upload_video_text.py [--csv FILE | --json FILE] [选项]
+```
+
+选项：
+- `--server URL`: 服务器地址，默认为 http://127.0.0.1:8000
+- `--csv FILE`: CSV文件路径，包含video_url和text_content列
+- `--json FILE`: JSON文件路径，包含视频URL和文本内容
+- `--delay SECONDS`: 每次请求间隔的延迟时间(秒)，默认为0.5
+
+CSV文件格式示例：
+```
+video_url,text_content
+https://example.com/video1.mp4,这是视频1的文本描述
+https://example.com/video2.mp4,这是视频2的文本描述
+```
+
+JSON文件格式示例：
+```json
+{
+  "items": [
+    {
+      "video_url": "https://example.com/video1.mp4",
+      "text_content": "这是视频1的文本描述"
+    },
+    {
+      "video_url": "https://example.com/video2.mp4",
+      "text_content": "这是视频2的文本描述"
+    }
+  ]
+}
+```
 
 ## 其它说明
 - 支持任意格式数据存储，推荐JSON格式，页面会自动解析`videos`字段。
