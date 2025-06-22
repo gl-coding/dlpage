@@ -8,26 +8,37 @@ import sys
 import os
 import time
 
-# 配置文件路径
-CONFIG_FILE = 'config.json'
+# 配置文件默认路径
+DEFAULT_CONFIG_FILE = 'config.json'
 
 # 加载配置文件
-def load_config():
+def load_config(config_path=DEFAULT_CONFIG_FILE):
     config = {}
     try:
-        if os.path.exists(CONFIG_FILE):
-            with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
-            print(f'已从 {CONFIG_FILE} 加载配置')
+            print(f'已从 {config_path} 加载配置')
         else:
-            print(f'警告：配置文件 {CONFIG_FILE} 不存在，将使用默认配置')
+            print(f'警告：配置文件 {config_path} 不存在，将使用默认配置')
     except Exception as e:
         print(f'加载配置文件出错: {e}，将使用默认配置')
     
     return config
 
-# 获取配置
-config = load_config()
+# 获取命令行参数中的配置文件路径
+def get_config_path():
+    # 创建一个临时的参数解析器，只用于提取配置文件路径
+    temp_parser = argparse.ArgumentParser(add_help=False)
+    temp_parser.add_argument('--config', type=str, default=DEFAULT_CONFIG_FILE,
+                        help=f'指定配置文件路径 (默认: {DEFAULT_CONFIG_FILE})')
+    # 解析已知参数，忽略未知参数
+    temp_args, _ = temp_parser.parse_known_args()
+    return temp_args.config
+
+# 获取配置文件路径并加载配置
+config_path = get_config_path()
+config = load_config(config_path)
 
 # 设置默认值和从配置文件加载的值
 DEFAULT_API_URL = 'http://127.0.0.1:8000/datapost/video-text/'
@@ -172,6 +183,8 @@ def main():
                         help='处理多个文件时，每次请求间隔的延迟时间(秒) (默认: 0.5)')
     parser.add_argument('--url', type=str, 
                         help='手动指定API端点URL，覆盖配置文件设置')
+    parser.add_argument('--config', type=str, default=DEFAULT_CONFIG_FILE,
+                        help=f'指定配置文件路径 (默认: {DEFAULT_CONFIG_FILE})')
     
     args = parser.parse_args()
     

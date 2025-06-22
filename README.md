@@ -432,5 +432,59 @@
 - 支持任意格式数据存储，推荐JSON格式，页面会自动解析`videos`字段。
 - 如需扩展其它字段或功能，请修改`datapost/models.py`和相关视图。
 
+## 语音转文字功能
+
+项目提供了 `video_audio2txt/auto2text.py` 脚本，用于将音频文件转换为文本。该脚本使用Vosk语音识别引擎，根据系统平台自动选择合适的模型。
+
+### 安装依赖
+
+```bash
+pip install vosk
+pip install ffmpeg-python
+```
+
+### 使用方法
+
+1. **基本用法**
+   ```bash
+   python video_audio2txt/auto2text.py -i audio.mp3
+   ```
+   此命令会将音频文件转换为文本，并将结果保存在 `transcriptions` 目录下。
+
+2. **指定输出目录**
+   ```bash
+   python video_audio2txt/auto2text.py -i audio.mp3 -o my_transcriptions
+   ```
+
+3. **手动指定模型**
+   ```bash
+   python video_audio2txt/auto2text.py -i audio.mp3 -m ./models/my-custom-model
+   ```
+
+4. **强制使用小模型**
+   ```bash
+   python video_audio2txt/auto2text.py -i audio.mp3 --force-small
+   ```
+
+5. **强制使用大模型**
+   ```bash
+   python video_audio2txt/auto2text.py -i audio.mp3 --force-large
+   ```
+
+### 配置文件集成
+
+`auto2text.py` 脚本会自动从 `config.json` 文件中读取配置：
+
+- `VOSK_SMALL_MODEL_PATH`：小型语音识别模型路径（Linux系统默认使用）
+- `VOSK_LARGE_MODEL_PATH`：大型语音识别模型路径（非Linux系统默认使用）
+
+### 平台自适应
+
+脚本会根据运行平台自动选择合适的模型：
+- Linux系统：默认使用小型模型（资源占用较少）
+- 其他系统（Windows、macOS等）：默认使用大型模型（识别效果更好）
+
+可以通过 `--force-small` 或 `--force-large` 参数强制指定使用的模型类型。
+
 ---
 如有问题或定制需求，请联系开发者。
