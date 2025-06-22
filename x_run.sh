@@ -31,6 +31,7 @@ function all() {
             exit 0
         fi
         echo "running" > x_status
+        rm -rf downloaded_videos/
         download_from_api
         cd video_audio2txt
         sh x_run_all.sh
