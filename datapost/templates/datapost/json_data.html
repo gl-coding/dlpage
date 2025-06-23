@@ -1,0 +1,82 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}JSON 数据展示{% endblock %}
+
+{% block header %}JSON 数据展示{% endblock %}
+
+{% block extra_head %}
+<style>
+    .stats {
+        background: #f5f5f5;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .json-container {
+        background: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+    .copy-btn {
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 3px;
+        cursor: pointer;
+        margin-left: 10px;
+    }
+    .copy-btn:hover {
+        background: #218838;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <div class="actions">
+        <a href="{% url 'show_data' %}" class="btn">返回数据列表</a>
+        <a href="{% url 'export_all_data' %}" class="btn">下载 JSON 文件</a>
+        <button class="copy-btn" onclick="copyJson()">复制 JSON</button>
+    </div>
+    
+    <div class="stats">
+        <strong>统计信息：</strong><br>
+        总视频数量: {{ total_videos }}<br>
+        导出时间: {{ export_time }}<br>
+        数据格式: video_list_export.json 兼容格式
+    </div>
+    
+    <div class="json-container">
+        <pre id="jsonContent">{{ formatted_json }}</pre>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyJson() {
+    const content = document.getElementById('jsonContent').textContent;
+    navigator.clipboard.writeText(content).then(function() {
+        const btn = document.querySelector('.copy-btn');
+        const originalText = btn.textContent;
+        btn.textContent = '已复制!';
+        btn.style.background = '#28a745';
+        setTimeout(function() {
+            btn.textContent = originalText;
+            btn.style.background = '#28a745';
+        }, 2000);
+    }).catch(function(err) {
+        alert('复制失败，请手动选择复制');
+    });
+}
+</script>
+{% endblock %} 

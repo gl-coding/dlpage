@@ -1,0 +1,79 @@
+{% extends "datapost/base.html" %}
+{% load datapost_extras %}
+
+{% block title %}已接收数据列表{% endblock %}
+
+{% block header %}已接收数据列表{% endblock %}
+
+{% block content %}
+    <div class="actions">
+        <button onclick="clearData()" class="btn btn-danger">清空所有数据</button>
+        <a href="{% url 'export_all_data' %}" class="btn">导出视频列表(JSON)</a>
+        <a href="{% url 'show_json_data' %}" class="btn btn-success">查看 JSON 数据</a>
+        <a href="{% url 'show_video_text' %}" class="btn btn-secondary">视频文本数据</a>
+    </div>
+
+    {% for post in page %}
+        <div class="data-item">
+            <div><b>接收时间：</b>{{ post.created_at }}</div>
+            <button onclick="deleteData({{ post.id }})" class="btn btn-danger">删除本条</button>
+            
+            {% if post.data %}
+                {% with data_json=post.data|parse_json %}
+                    {% if data_json.videos %}
+                        <div><b>视频列表：</b></div>
+                        <ul>
+                            {% for vurl in data_json.videos %}
+                                <li>
+                                    <video src="{{ vurl }}" controls width="320"></video><br>
+                                    <a href="{{ vurl }}" target="_blank">{{ vurl }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <pre>{{ post.data }}</pre>
+                    {% endif %}
+                {% endwith %}
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <!-- 分页导航 -->
+    <div class="pagination">
+        {% if page.has_previous %}
+            <button onclick="gotoPage({{ page.previous_page_number }})">上一页</button>
+        {% endif %}
+        
+        第 {{ page.number }} / {{ paginator.num_pages }} 页
+        
+        {% if page.has_next %}
+            <button onclick="gotoPage({{ page.next_page_number }})">下一页</button>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function clearData() {
+        if(confirm('确定要清空所有数据吗？')){
+            fetch('{% url "clear_data" %}', {method: 'POST'})
+                .then(r => r.json())
+                .then(d => {window.location.reload();});
+        }
+    }
+    
+    function deleteData(id) {
+        if(confirm('确定要删除本条数据吗？')){
+            fetch('{% url "delete_data" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            }).then(r => r.json()).then(d => {window.location.reload();});
+        }
+    }
+    
+    function gotoPage(p) {
+        window.location.search = '?page=' + p;
+    }
+</script>
+{% endblock %} 

@@ -1,0 +1,135 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}视频文本数据{% endblock %}
+
+{% block header %}视频文本数据{% endblock %}
+
+{% block content %}
+    <div class="actions">
+        <a href="{% url 'show_data' %}" class="btn">返回数据列表</a>
+        <a href="{% url 'export_video_text' %}" class="btn">导出视频文本数据</a>
+        <a href="{% url 'video_text_api' %}" class="btn api-link" target="_blank">API接口</a>
+        <button class="timestamp-btn" onclick="createTimestampFile()">更新时间戳文件</button>
+        <button class="clear-all-btn" onclick="clearAllData()">清空所有数据</button>
+    </div>
+    
+    <div class="stats">
+        总记录数: {{ total_count }}
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    {% for item in page %}
+        <div class="video-text-item">
+            <div class="video-container">
+                <video src="{{ item.video_url }}" controls width="320"></video>
+            </div>
+            <div class="url-link">
+                <strong>视频链接：</strong> <a href="{{ item.video_url }}" target="_blank">{{ item.video_url }}</a>
+            </div>
+            <div>
+                <div class="text-header">
+                    <strong>文本内容：</strong>
+                    <button class="copy-btn" onclick="copyText(this, 'text-content-{{ item.id }}')">复制文本</button>
+                </div>
+                <div class="text-content" id="text-content-{{ item.id }}">{{ item.text_content }}</div>
+            </div>
+            <div class="timestamp">添加时间：{{ item.created_at }}</div>
+            <button class="delete-btn" onclick="deleteVideoText({{ item.id }})">删除</button>
+        </div>
+    {% endfor %}
+    
+    <!-- 分页导航 -->
+    <div class="pagination">
+        {% if page.has_previous %}
+            <button onclick="gotoPage({{ page.previous_page_number }})">上一页</button>
+        {% endif %}
+        
+        第 {{ page.number }} / {{ paginator.num_pages }} 页
+        
+        {% if page.has_next %}
+            <button onclick="gotoPage({{ page.next_page_number }})">下一页</button>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function gotoPage(p) {
+        window.location.search = '?page=' + p;
+    }
+    
+    function deleteVideoText(id) {
+        if(confirm('确定要删除这条数据吗？')) {
+            fetch('{% url "delete_video_text" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({id: id})
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('删除失败: ' + d.message);
+                }
+            });
+        }
+    }
+    
+    function clearAllData() {
+        if(confirm('确定要清空所有视频文本数据吗？此操作不可恢复！')) {
+            fetch('{% url "clear_video_text" %}', {
+                method: 'POST'
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    alert(d.message);
+                    window.location.reload();
+                } else {
+                    alert('清空失败: ' + d.message);
+                }
+            });
+        }
+    }
+    
+    function copyText(button, elementId) {
+        const text = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(text).then(function() {
+            // 复制成功，改变按钮样式和文字
+            button.textContent = '已复制';
+            button.classList.add('copy-success');
+            
+            // 2秒后恢复按钮样式
+            setTimeout(function() {
+                button.textContent = '复制文本';
+                button.classList.remove('copy-success');
+            }, 2000);
+        }).catch(function(err) {
+            alert('复制失败: ' + err);
+        });
+    }
+    
+    function createTimestampFile() {
+        fetch('{% url "create_timestamp_file" %}', {
+            method: 'POST'
+        }).then(r => r.json()).then(d => {
+            if(d.status === 'success') {
+                showNotification(d.message);
+            } else {
+                alert('创建文件失败: ' + d.message);
+            }
+        }).catch(function(err) {
+            alert('请求失败: ' + err);
+        });
+    }
+    
+    function showNotification(message) {
+        const notification = document.getElementById('notification');
+        notification.textContent = message;
+        notification.classList.add('show');
+        
+        // 3秒后隐藏通知
+        setTimeout(function() {
+            notification.classList.remove('show');
+        }, 3000);
+    }
+</script>
+{% endblock %} 

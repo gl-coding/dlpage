@@ -17,7 +17,17 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-urlpatterns = [
+# 原始URL配置
+original_urlpatterns = [
     path('admin/', admin.site.urls),
     path('datapost/', include('datapost.urls')),
 ]
+
+# 添加API前缀的URL配置
+api_urlpatterns = [
+    path('api/admin/', admin.site.urls),
+    path('api/datapost/', include('datapost.urls')),
+]
+
+# 同时支持原始URL和带API前缀的URL
+urlpatterns = original_urlpatterns + api_urlpatterns
