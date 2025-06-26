@@ -489,12 +489,8 @@ def delete_single_video(request):
 def view_log_file(request):
     """查看log.run文件内容"""
     try:
-        # 获取当前工作目录
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        # 获取项目根目录（当前目录的上一级）
-        project_root = os.path.dirname(current_dir)
-        # log.run文件路径
-        log_file_path = os.path.join(project_root, 'log.run')
+        # 使用相对路径访问log.run文件
+        log_file_path = 'log.run'
         
         # 检查是否为AJAX请求
         if request.GET.get('ajax') == '1':

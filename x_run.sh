@@ -25,21 +25,21 @@ function upload_video_text() {
 }
 
 function server_all() {
-    eval "$(conda shell.bash hook)"
+    eval "$(conda shell.bash hook)" 
     conda activate py310
 
     # 如果timestamp.txt存在，则下载
     if [ -f timestamp.txt ]; then
         if [ -f x_status ]; then
-            echo "x_status exists, skipping download"
+            echo "x_status exists, skipping download" > log.run
             exit 0
         fi
         echo "running" > x_status
         rm -rf downloaded_videos/
         rm -f download_mapping.txt
-        download_from_api
+        download_from_api >> log.run
         cd video_audio2txt
-        sh x_run_all.sh
+        sh x_run_all.sh >> log.run
         cd ..
         mv x_status x_status.old
         rm -f timestamp.txt
