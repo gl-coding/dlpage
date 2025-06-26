@@ -1,4 +1,0 @@
-aaaaaaaa
-    parser.add_argument("-m", "--model", default="./models/vosk-model-cn-0.22", help="Vosk模型路径")
-    parser.add_argument("-m", "--model", default="./models/vosk-model-cn-0.22", help="Vosk模型路径")
-   
