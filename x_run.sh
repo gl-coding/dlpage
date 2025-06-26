@@ -30,16 +30,17 @@ function server_all() {
 
     # 如果timestamp.txt存在，则下载
     if [ -f timestamp.txt ]; then
+        echo "timestamp.txt exists, running" > log.run
         if [ -f x_status ]; then
-            echo "x_status exists, skipping download" > log.run
+            echo "x_status exists, " > log.run
             exit 0
         fi
         echo "running" > x_status
         rm -rf downloaded_videos/
         rm -f download_mapping.txt
-        download_from_api >> log.run
+        download_from_api >> log.run 2>&1
         cd video_audio2txt
-        sh x_run_all.sh >> log.run
+        sh x_run_all.sh >> log.run 2>&1
         cd ..
         mv x_status x_status.old
         rm -f timestamp.txt
