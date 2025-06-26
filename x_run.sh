@@ -23,7 +23,7 @@ function upload_video_text() {
     python upload_video_text.py --dir video_audio/transcriptions
 }
 
-function all() {
+function server_all() {
     # 如果timestamp.txt存在，则下载
     if [ -f timestamp.txt ]; then
         if [ -f x_status ]; then
@@ -32,13 +32,31 @@ function all() {
         fi
         echo "running" > x_status
         rm -rf downloaded_videos/
+        rm -f download_mapping.txt
         download_from_api
         cd video_audio2txt
         sh x_run_all.sh
         cd ..
-        #upload_video_text
         mv x_status x_status.old
+        rm -f timestamp.txt
     fi
+}
+
+function local_all() {
+    rm -rf downloaded_videos/
+    rm -f download_mapping.txt
+    download_from_api
+    cd video_audio2txt
+    sh x_run_all.sh
+    cd ..
+}
+
+function clean() {
+    rm -rf downloaded_videos/
+    rm -f download_mapping.txt
+    rm -f timestamp.txt
+    rm -f x_status*
+    rm -rf video_audio/
 }
 
 case $1 in
@@ -60,8 +78,14 @@ case $1 in
     "upload")
         upload_video_text
         ;;
-    "all")
-        all
+    "server_all")
+        server_all
+        ;;
+    "local_all")
+        local_all
+        ;;
+    "clean")
+        clean
         ;;
     *)
         echo "Usage: $0 {server|download|export|dlurl|dlapi|upload|all}"
