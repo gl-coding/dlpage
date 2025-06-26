@@ -442,3 +442,94 @@ def create_timestamp_file(request):
             'status': 'error',
             'message': 'Only POST method is allowed'
         }, status=405)
+
+@csrf_exempt
+def delete_single_video(request):
+    """删除单个视频链接"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            post_id = data.get('post_id')
+            video_url = data.get('video_url')
+            
+            if post_id is None or video_url is None:
+                return JsonResponse({'status': 'error', 'message': '缺少必要参数'}, status=400)
+            
+            try:
+                post = DataPost.objects.get(id=post_id)
+                try:
+                    post_data = json.loads(post.data)
+                    if isinstance(post_data, dict) and 'videos' in post_data:
+                        if video_url in post_data['videos']:
+                            # 移除指定的视频链接
+                            post_data['videos'].remove(video_url)
+                            # 如果视频列表为空，可以选择删除整条记录或保留空列表
+                            if not post_data['videos']:
+                                post.delete()
+                                return JsonResponse({'status': 'success', 'message': '视频已删除，记录已清空'})
+                            else:
+                                # 更新数据库记录
+                                post.data = json.dumps(post_data)
+                                post.save()
+                                return JsonResponse({'status': 'success', 'message': '视频已从列表中删除'})
+                        else:
+                            return JsonResponse({'status': 'error', 'message': '视频链接不存在'}, status=404)
+                    else:
+                        return JsonResponse({'status': 'error', 'message': '数据格式不正确'}, status=400)
+                except json.JSONDecodeError:
+                    return JsonResponse({'status': 'error', 'message': '数据不是有效的JSON格式'}, status=400)
+            except DataPost.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': '记录不存在'}, status=404)
+                
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+
+def view_log_file(request):
+    """查看log.run文件内容"""
+    try:
+        # 获取当前工作目录
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        # 获取项目根目录（当前目录的上一级）
+        project_root = os.path.dirname(current_dir)
+        # log.run文件路径
+        log_file_path = os.path.join(project_root, 'log.run')
+        
+        # 检查是否为AJAX请求
+        if request.GET.get('ajax') == '1':
+            if os.path.exists(log_file_path):
+                try:
+                    with open(log_file_path, 'r', encoding='utf-8') as f:
+                        log_content = f.read()
+                    return JsonResponse({'content': log_content})
+                except Exception as e:
+                    return JsonResponse({'error': f'读取文件时出错: {str(e)}'})
+            else:
+                return JsonResponse({'error': f'文件 {log_file_path} 不存在'})
+        
+        # 非AJAX请求，返回HTML页面
+        if os.path.exists(log_file_path):
+            with open(log_file_path, 'r', encoding='utf-8') as f:
+                log_content = f.read()
+            
+            # 准备模板上下文
+            context = {
+                'log_content': log_content,
+                'file_path': log_file_path
+            }
+            
+            # 渲染模板
+            return render(request, 'datapost/view_log.html', context)
+        else:
+            return render(request, 'datapost/view_log.html', {
+                'error_message': f'文件 {log_file_path} 不存在',
+                'file_path': log_file_path
+            })
+    except Exception as e:
+        if request.GET.get('ajax') == '1':
+            return JsonResponse({'error': f'读取文件时出错: {str(e)}'})
+        return render(request, 'datapost/view_log.html', {
+            'error_message': f'读取文件时出错: {str(e)}',
+            'file_path': log_file_path if 'log_file_path' in locals() else '未知'
+        })
