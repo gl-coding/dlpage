@@ -11,6 +11,7 @@
         <a href="{% url 'video_text_api' %}" class="btn api-link" target="_blank">API接口</a>
         <button class="timestamp-btn" onclick="createTimestampFile()">更新时间戳文件</button>
         <button class="clear-all-btn" onclick="clearAllData()">清空所有数据</button>
+        <button class="log-btn" onclick="viewLogFile()">查看日志文件</button>
     </div>
     
     <div class="stats">
@@ -18,6 +19,25 @@
     </div>
     
     <div id="notification" class="notification"></div>
+    
+    <!-- 日志模态框 -->
+    <div id="logModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close-modal" onclick="closeLogModal()">&times;</span>
+                <h2>日志文件内容</h2>
+            </div>
+            <div class="modal-body">
+                <div class="log-actions">
+                    <button onclick="refreshLog()" class="btn btn-success">刷新日志</button>
+                    <button onclick="copyLogContent()" class="btn">复制全部内容</button>
+                </div>
+                <div id="log-loading">加载中...</div>
+                <div id="log-error" class="error-message" style="display:none;"></div>
+                <pre id="log-content" class="log-content"></pre>
+            </div>
+        </div>
+    </div>
     
     {% for item in page %}
         <div class="video-text-item">
@@ -131,5 +151,160 @@
             notification.classList.remove('show');
         }, 3000);
     }
+    
+    // 日志查看相关功能
+    function viewLogFile() {
+        const modal = document.getElementById('logModal');
+        modal.style.display = 'block';
+        loadLogContent();
+    }
+    
+    function closeLogModal() {
+        const modal = document.getElementById('logModal');
+        modal.style.display = 'none';
+    }
+    
+    function loadLogContent() {
+        const logContent = document.getElementById('log-content');
+        const logLoading = document.getElementById('log-loading');
+        const logError = document.getElementById('log-error');
+        
+        logContent.style.display = 'none';
+        logLoading.style.display = 'block';
+        logError.style.display = 'none';
+        
+        fetch('{% url "view_log_file" %}?ajax=1')
+            .then(response => response.json())
+            .then(data => {
+                logLoading.style.display = 'none';
+                
+                if (data.error) {
+                    logError.textContent = data.error;
+                    logError.style.display = 'block';
+                } else {
+                    logContent.textContent = data.content;
+                    logContent.style.display = 'block';
+                }
+            })
+            .catch(err => {
+                logLoading.style.display = 'none';
+                logError.textContent = '加载日志失败: ' + err;
+                logError.style.display = 'block';
+            });
+    }
+    
+    function refreshLog() {
+        loadLogContent();
+    }
+    
+    function copyLogContent() {
+        const logContent = document.getElementById('log-content');
+        
+        // 创建一个临时文本区域
+        const textArea = document.createElement('textarea');
+        textArea.value = logContent.textContent;
+        document.body.appendChild(textArea);
+        
+        // 选择文本并复制
+        textArea.select();
+        document.execCommand('copy');
+        
+        // 移除临时元素
+        document.body.removeChild(textArea);
+        
+        // 显示提示
+        showNotification('日志内容已复制到剪贴板');
+    }
+    
+    // 点击模态框外部关闭模态框
+    window.onclick = function(event) {
+        const modal = document.getElementById('logModal');
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
 </script>
+
+<style>
+    /* 日志模态框样式 */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 0;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 900px;
+        box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    }
+    
+    .modal-header {
+        padding: 10px 16px;
+        background-color: #f8f8f8;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    
+    .modal-header h2 {
+        margin: 0;
+        display: inline-block;
+    }
+    
+    .close-modal {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close-modal:hover,
+    .close-modal:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+    
+    .modal-body {
+        padding: 16px;
+    }
+    
+    .log-content {
+        background-color: #f5f5f5;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        font-family: monospace;
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    .log-actions {
+        margin-bottom: 10px;
+    }
+    
+    .error-message {
+        color: red;
+        padding: 15px;
+        background-color: #ffeeee;
+        border-left: 5px solid red;
+        margin: 10px 0;
+    }
+    
+    .log-btn {
+        background-color: #17a2b8;
+        color: white;
+    }
+</style>
 {% endblock %} 

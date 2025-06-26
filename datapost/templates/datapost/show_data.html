@@ -27,6 +27,7 @@
                                 <li>
                                     <video src="{{ vurl }}" controls width="320"></video><br>
                                     <a href="{{ vurl }}" target="_blank">{{ vurl }}</a>
+                                    <button onclick="deleteSingleVideo({{ post.id }}, '{{ vurl|escapejs }}')" class="btn btn-sm btn-warning">删除此视频</button>
                                 </li>
                             {% endfor %}
                         </ul>
@@ -69,6 +70,25 @@
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({id: id})
             }).then(r => r.json()).then(d => {window.location.reload();});
+        }
+    }
+    
+    function deleteSingleVideo(postId, videoUrl) {
+        if(confirm('确定要删除这个视频链接吗？')){
+            fetch('{% url "delete_single_video" %}', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    post_id: postId,
+                    video_url: videoUrl
+                })
+            }).then(r => r.json()).then(d => {
+                if(d.status === 'success') {
+                    window.location.reload();
+                } else {
+                    alert('删除失败: ' + d.message);
+                }
+            });
         }
     }
     
