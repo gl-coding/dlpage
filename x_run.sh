@@ -44,7 +44,7 @@ function server_all() {
         sh x_run_all.sh >> log.run 2>&1
         cd ..
         mv x_status x_status.old
-        rm -f timestamp.txt > log.run 2>&1
+        rm -f timestamp.txt 
     else
         echo "timestamp.txt not found, skipping download" > log.run
     fi
