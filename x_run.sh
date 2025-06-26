@@ -1,3 +1,4 @@
+
 function run_server() {
     ps -ef | grep python | grep runserver | awk '{print $2}' | xargs kill -9
     nohup python3 manage.py runserver &
@@ -24,6 +25,9 @@ function upload_video_text() {
 }
 
 function server_all() {
+    eval "$(conda shell.bash hook)"
+    conda activate py310
+
     # 如果timestamp.txt存在，则下载
     if [ -f timestamp.txt ]; then
         if [ -f x_status ]; then
