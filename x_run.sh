@@ -1,42 +1,45 @@
+# 判断如果是linux系统，则指定python3路径
+if [ "$(uname)" == "Linux" ]; then
+    PYTHON_PATH="/root/miniconda3/envs/py310/bin/python"
+else
+    PYTHON_PATH="python"
+fi
 
 function run_server() {
     ps -ef | grep python | grep runserver | awk '{print $2}' | xargs kill -9
-    nohup python3 manage.py runserver &
+    nohup $PYTHON_PATH  manage.py runserver &
 }
 
 function download_videos() {
-    python download_videos.py --json video_list_export.json
+    $PYTHON_PATH download_videos.py --json video_list_export.json
 }
 
 function export_links() {
-    python download_videos.py --export-links
+    $PYTHON_PATH download_videos.py --export-links
 }
 
 function download_from_links() {
-    python download_videos.py --download
+    $PYTHON_PATH download_videos.py --download
 }
 
 function download_from_api() {
-    python download_videos.py --api --mapping download_mapping.txt
+    $PYTHON_PATH download_videos.py --api --mapping download_mapping.txt
 }
 
 function upload_video_text() {
-    python upload_video_text.py --dir video_audio/transcriptions
+    $PYTHON_PATH upload_video_text.py --dir video_audio/transcriptions
 }
 
 function server_all() {
-    eval "$(conda shell.bash hook)" 
-    conda activate py310
-
     # 如果timestamp.txt存在，则下载
     if [ -f timestamp.txt ]; then
-        echo "timestamp.txt exists, running `date`" >> log.run
+        echo "timestamp.txt exists, running, date: `date`" >> log.run
         if [ -f x_status ]; then
-            echo "x_status exists, `date`" >> log.run
+            echo "x_status exists, date: `date`" >> log.run
             exit 0
         fi
         echo "running" > x_status
-        echo "task begin `date`" >> log.run
+        echo "task begin, date: `date`" >> log.run
         rm -rf downloaded_videos/
         rm -f download_mapping.txt
         download_from_api >> log.run 2>&1
@@ -46,7 +49,7 @@ function server_all() {
         mv x_status x_status.old
         rm -f timestamp.txt 
     else
-        echo "timestamp.txt not found, skipping download" > log.run
+        echo "timestamp.txt not found, skipping download, date: `date`" > log.run
     fi
 }
 
