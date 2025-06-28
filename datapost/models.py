@@ -13,3 +13,12 @@ class VideoText(models.Model):
     
     def __str__(self):
         return f"{self.video_url[:30]}... - {self.text_content[:30]}..."
+
+class VoiceData(models.Model):
+    voice = models.TextField()
+    outfile = models.CharField(max_length=500)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.outfile} - {self.created_at}"

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file
+from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data
 
 urlpatterns = [
     path('', post_data, name='post_data'),
@@ -18,4 +18,8 @@ urlpatterns = [
     path('video-text/clear/', clear_video_text, name='clear_video_text'),
     path('video-text/api/', video_text_api, name='video_text_api'),
     path('create-timestamp-file/', create_timestamp_file, name='create_timestamp_file'),
+    path('voice/', post_voice_data, name='post_voice_data'),
+    path('voice/list/', get_voice_data, name='get_voice_data'),
+    path('voice/<int:voice_id>/', get_voice_data_by_id, name='get_voice_data_by_id'),
+    path('voice/clear/', clear_voice_data, name='clear_voice_data'),
 ] 

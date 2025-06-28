@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DataPost, VideoText
+from .models import DataPost, VideoText, VoiceData
 import json
 import os
 import time
@@ -529,3 +529,174 @@ def view_log_file(request):
             'error_message': f'读取文件时出错: {str(e)}',
             'file_path': log_file_path if 'log_file_path' in locals() else '未知'
         })
+
+@csrf_exempt
+def post_voice_data(request):
+    """接收voice、outfile、content三个参数的POST接口"""
+    if request.method == 'POST':
+        try:
+            # 解析JSON数据
+            data = json.loads(request.body.decode('utf-8'))
+            
+            # 获取三个必需参数
+            voice = data.get('voice')
+            outfile = data.get('outfile')
+            content = data.get('content')
+            
+            # 验证参数
+            if voice is None or outfile is None or content is None:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '缺少必需参数，需要voice、outfile、content三个参数'
+                }, status=400)
+            
+            # 保存到数据库
+            voice_data = VoiceData.objects.create(
+                voice=voice,
+                outfile=outfile,
+                content=content
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '数据保存成功',
+                'id': voice_data.id,
+                'created_at': voice_data.created_at.isoformat()
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '请求数据格式错误，需要JSON格式'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'保存数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+def get_voice_data(request):
+    """获取voice数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            # 获取分页参数
+            page = request.GET.get('page', '1')
+            page_size = request.GET.get('page_size', '20')
+            
+            try:
+                page = int(page)
+                page_size = min(int(page_size), 100)  # 限制每页最大数量为100
+            except ValueError:
+                page = 1
+                page_size = 20
+            
+            # 获取所有voice数据
+            voice_data_list = VoiceData.objects.all().order_by('-created_at')
+            
+            # 计算总数
+            total_count = voice_data_list.count()
+            
+            # 分页
+            paginator = Paginator(voice_data_list, page_size)
+            current_page = paginator.get_page(page)
+            
+            # 构建响应数据
+            items = []
+            for item in current_page:
+                items.append({
+                    'id': item.id,
+                    'voice': item.voice,
+                    'outfile': item.outfile,
+                    'content': item.content,
+                    'created_at': item.created_at.isoformat()
+                })
+            
+            response_data = {
+                'status': 'success',
+                'total_count': total_count,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': paginator.num_pages,
+                'has_next': current_page.has_next(),
+                'has_previous': current_page.has_previous(),
+                'items': items
+            }
+            
+            return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+
+def get_voice_data_by_id(request, voice_id):
+    """根据ID获取单条voice数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            voice_data = VoiceData.objects.get(id=voice_id)
+            
+            response_data = {
+                'status': 'success',
+                'data': {
+                    'id': voice_data.id,
+                    'voice': voice_data.voice,
+                    'outfile': voice_data.outfile,
+                    'content': voice_data.content,
+                    'created_at': voice_data.created_at.isoformat()
+                }
+            }
+            
+            return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+            
+        except VoiceData.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'ID为{voice_id}的数据不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+
+def clear_voice_data(request):
+    """清空所有voice数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            # 获取删除前的数量
+            count = VoiceData.objects.count()
+            
+            # 删除所有数据
+            VoiceData.objects.all().delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'所有voice数据已清空，共删除 {count} 条记录'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'清空数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
