@@ -1,5 +1,5 @@
 # 判断如果是linux系统，则指定python3路径
-if [ "$(uname)" == "Linux" ]; then
+if [ "$(uname)" = "Linux" ]; then
     PYTHON_PATH="/root/miniconda3/envs/py310/bin/python"
 else
     PYTHON_PATH="python"
@@ -66,7 +66,7 @@ function clean() {
     rm -rf downloaded_videos/
     rm -f download_mapping.txt
     rm -f timestamp.txt
-    rm -f x_status*
+    rm -f x_status* log.run nohup.out
     rm -rf video_audio/
 }
 
