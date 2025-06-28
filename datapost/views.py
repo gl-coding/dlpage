@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DataPost, VideoText, VoiceData
+from .models import DataPost, VideoText, VoiceData, TypeContent
 import json
 import os
 import time
@@ -741,4 +741,224 @@ def delete_voice_data(request, voice_id):
         return JsonResponse({
             'status': 'error',
             'message': 'Only POST method is allowed'
+        }, status=405)
+
+# TypeContent 相关接口
+
+@csrf_exempt
+def post_type_content(request):
+    """创建type和content数据的POST接口"""
+    if request.method == 'POST':
+        try:
+            # 尝试解析JSON数据
+            data = json.loads(request.body.decode('utf-8'))
+            
+            # 获取参数
+            type_value = data.get('type')
+            content_value = data.get('content')
+            
+            # 验证参数
+            if not type_value or not content_value:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '缺少必需参数，需要type和content两个参数'
+                }, status=400)
+            
+            # 保存到数据库
+            type_content = TypeContent.objects.create(
+                type=type_value,
+                content=content_value
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '数据保存成功',
+                'id': type_content.id,
+                'type': type_content.type,
+                'content': type_content.content,
+                'created_at': type_content.created_at.isoformat()
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '请求数据格式错误，需要JSON格式'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'保存数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+def get_type_content(request):
+    """获取type_content数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            # 获取分页参数
+            page = request.GET.get('page', '1')
+            page_size = request.GET.get('page_size', '20')
+            
+            # 获取筛选参数
+            type_filter = request.GET.get('type', '')
+            
+            try:
+                page = int(page)
+                page_size = min(int(page_size), 100)  # 限制每页最大数量为100
+            except ValueError:
+                page = 1
+                page_size = 20
+            
+            # 获取数据，支持按type筛选
+            queryset = TypeContent.objects.all().order_by('-created_at')
+            if type_filter:
+                queryset = queryset.filter(type__icontains=type_filter)
+            
+            # 计算总数
+            total_count = queryset.count()
+            
+            # 分页
+            paginator = Paginator(queryset, page_size)
+            current_page = paginator.get_page(page)
+            
+            # 构建响应数据
+            items = []
+            for item in current_page:
+                items.append({
+                    'id': item.id,
+                    'type': item.type,
+                    'content': item.content,
+                    'created_at': item.created_at.isoformat(),
+                    'updated_at': item.updated_at.isoformat()
+                })
+            
+            response_data = {
+                'status': 'success',
+                'total_count': total_count,
+                'page': page,
+                'page_size': page_size,
+                'total_pages': paginator.num_pages,
+                'has_next': current_page.has_next(),
+                'has_previous': current_page.has_previous(),
+                'items': items
+            }
+            
+            return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+
+def get_type_content_by_id(request, content_id):
+    """根据ID获取单条type_content数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            type_content = TypeContent.objects.get(id=content_id)
+            
+            response_data = {
+                'status': 'success',
+                'data': {
+                    'id': type_content.id,
+                    'type': type_content.type,
+                    'content': type_content.content,
+                    'created_at': type_content.created_at.isoformat(),
+                    'updated_at': type_content.updated_at.isoformat()
+                }
+            }
+            
+            return JsonResponse(response_data, json_dumps_params={'ensure_ascii': False})
+            
+        except TypeContent.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'ID为{content_id}的数据不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+
+@csrf_exempt
+def delete_type_content(request, content_id):
+    """通过ID删除单条type_content数据的POST接口"""
+    if request.method == 'POST':
+        try:
+            # 查找指定ID的数据
+            type_content = TypeContent.objects.get(id=content_id)
+            
+            # 保存删除前的信息用于返回
+            deleted_info = {
+                'id': type_content.id,
+                'type': type_content.type,
+                'content': type_content.content,
+                'created_at': type_content.created_at.isoformat(),
+                'updated_at': type_content.updated_at.isoformat()
+            }
+            
+            # 删除数据
+            type_content.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'ID为{content_id}的数据已删除',
+                'deleted_data': deleted_info
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except TypeContent.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'ID为{content_id}的数据不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'删除数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+def clear_type_content(request):
+    """清空所有type_content数据的GET接口"""
+    if request.method == 'GET':
+        try:
+            # 获取删除前的数量
+            count = TypeContent.objects.count()
+            
+            # 删除所有数据
+            TypeContent.objects.all().delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'所有type_content数据已清空，共删除 {count} 条记录'
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'清空数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
         }, status=405)

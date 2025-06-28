@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data
+from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content
 
 urlpatterns = [
     path('', post_data, name='post_data'),
@@ -23,4 +23,10 @@ urlpatterns = [
     path('voice/<int:voice_id>/', get_voice_data_by_id, name='get_voice_data_by_id'),
     path('voice/clear/', clear_voice_data, name='clear_voice_data'),
     path('voice/delete/<int:voice_id>/', delete_voice_data, name='delete_voice_data'),
+    # TypeContent 相关路由
+    path('type-content/', post_type_content, name='post_type_content'),
+    path('type-content/list/', get_type_content, name='get_type_content'),
+    path('type-content/<int:content_id>/', get_type_content_by_id, name='get_type_content_by_id'),
+    path('type-content/delete/<int:content_id>/', delete_type_content, name='delete_type_content'),
+    path('type-content/clear/', clear_type_content, name='clear_type_content'),
 ] 
