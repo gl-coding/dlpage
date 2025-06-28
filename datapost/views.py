@@ -700,3 +700,45 @@ def clear_voice_data(request):
             'status': 'error',
             'message': 'Only GET method is allowed'
         }, status=405)
+
+@csrf_exempt
+def delete_voice_data(request, voice_id):
+    """通过ID删除单条voice数据的POST接口"""
+    if request.method == 'POST':
+        try:
+            # 查找指定ID的数据
+            voice_data = VoiceData.objects.get(id=voice_id)
+            
+            # 保存删除前的信息用于返回
+            deleted_info = {
+                'id': voice_data.id,
+                'voice': voice_data.voice,
+                'outfile': voice_data.outfile,
+                'content': voice_data.content,
+                'created_at': voice_data.created_at.isoformat()
+            }
+            
+            # 删除数据
+            voice_data.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'ID为{voice_id}的voice数据已删除',
+                'deleted_data': deleted_info
+            })
+            
+        except VoiceData.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'ID为{voice_id}的数据不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'删除数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
