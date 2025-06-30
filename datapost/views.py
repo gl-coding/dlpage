@@ -292,6 +292,41 @@ def delete_video_text(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
 
+@csrf_exempt
+def update_video_text(request):
+    """更新视频文本数据"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            item_id = data.get('id')
+            text_content = data.get('text_content')
+            
+            if item_id is None:
+                return JsonResponse({'status': 'error', 'message': '缺少id参数'}, status=400)
+            
+            if text_content is None:
+                return JsonResponse({'status': 'error', 'message': '缺少text_content参数'}, status=400)
+            
+            try:
+                video_text = VideoText.objects.get(id=item_id)
+                video_text.text_content = text_content
+                video_text.save()
+                
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': f'id={item_id} 文本内容已更新',
+                    'updated_content': text_content
+                })
+            except VideoText.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': '记录不存在'}, status=404)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': '无效的JSON数据'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Only POST allowed'}, status=405)
+
 def export_video_text(request):
     """导出视频文本数据为JSON格式"""
     if request.method == 'GET':

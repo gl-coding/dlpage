@@ -50,9 +50,17 @@
             <div>
                 <div class="text-header">
                     <strong>文本内容：</strong>
-                    <button class="copy-btn" onclick="copyText(this, 'text-content-{{ item.id }}')">复制文本</button>
+                    <div class="text-actions">
+                        <button class="copy-btn" onclick="copyText(this, 'text-content-{{ item.id }}')">复制文本</button>
+                        <button class="edit-btn" onclick="toggleEdit({{ item.id }})">编辑</button>
+                    </div>
                 </div>
                 <div class="text-content" id="text-content-{{ item.id }}">{{ item.text_content }}</div>
+                <textarea class="text-editor" id="text-editor-{{ item.id }}" style="display: none;">{{ item.text_content }}</textarea>
+                <div class="edit-actions" id="edit-actions-{{ item.id }}" style="display: none;">
+                    <button class="save-btn" onclick="saveText({{ item.id }})">保存</button>
+                    <button class="cancel-btn" onclick="cancelEdit({{ item.id }})">取消</button>
+                </div>
             </div>
             <div class="timestamp">添加时间：{{ item.created_at }}</div>
             <button class="delete-btn" onclick="deleteVideoText({{ item.id }})">删除</button>
@@ -151,6 +159,82 @@
             notification.classList.remove('show');
         }, 3000);
     }
+
+    function toggleEdit(id) {
+        const textContent = document.getElementById('text-content-' + id);
+        const textEditor = document.getElementById('text-editor-' + id);
+        const editActions = document.getElementById('edit-actions-' + id);
+        const editBtn = event.target;
+        
+        if (textEditor.style.display === 'none') {
+            // 进入编辑模式
+            textContent.style.display = 'none';
+            textEditor.style.display = 'block';
+            editActions.style.display = 'block';
+            editBtn.textContent = '取消编辑';
+            textEditor.value = textContent.textContent;
+            textEditor.focus();
+        } else {
+            // 退出编辑模式
+            cancelEdit(id);
+        }
+    }
+
+    function cancelEdit(id) {
+        const textContent = document.getElementById('text-content-' + id);
+        const textEditor = document.getElementById('text-editor-' + id);
+        const editActions = document.getElementById('edit-actions-' + id);
+        const editBtn = document.querySelector(`button[onclick="toggleEdit(${id})"]`);
+        
+        textContent.style.display = 'block';
+        textEditor.style.display = 'none';
+        editActions.style.display = 'none';
+        editBtn.textContent = '编辑';
+        
+        // 恢复原始内容
+        textEditor.value = textContent.textContent;
+    }
+
+    function saveText(id) {
+        const textEditor = document.getElementById('text-editor-' + id);
+        const newContent = textEditor.value.trim();
+        
+        if (!newContent) {
+            alert('文本内容不能为空');
+            return;
+        }
+        
+        // 发送更新请求
+        fetch('{% url "update_video_text" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: id,
+                text_content: newContent
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 更新显示内容
+                const textContent = document.getElementById('text-content-' + id);
+                textContent.textContent = newContent;
+                
+                // 退出编辑模式
+                cancelEdit(id);
+                
+                // 显示成功消息
+                showNotification(data.message);
+            } else {
+                alert('保存失败: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('保存失败: ' + error);
+        });
+    }
     
     // 日志查看相关功能
     function viewLogFile() {
@@ -237,6 +321,77 @@
         height: 100%;
         overflow: auto;
         background-color: rgba(0,0,0,0.4);
+    }
+
+    /* 文本编辑相关样式 */
+    .text-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+    }
+
+    .text-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .edit-btn {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 3px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+
+    .edit-btn:hover {
+        background-color: #138496;
+    }
+
+    .text-editor {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-family: inherit;
+        font-size: inherit;
+        resize: vertical;
+        box-sizing: border-box;
+    }
+
+    .edit-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .save-btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .save-btn:hover {
+        background-color: #218838;
+    }
+
+    .cancel-btn {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+
+    .cancel-btn:hover {
+        background-color: #5a6268;
     }
     
     .modal-content {
