@@ -16,9 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
+
+# 根路径重定向函数
+def redirect_to_links(request):
+    return redirect('/datapost/links/')
 
 # 原始URL配置
 original_urlpatterns = [
+    path('', redirect_to_links, name='home'),  # 根路径重定向到链接展示页
     path('admin/', admin.site.urls),
     path('datapost/', include('datapost.urls')),
 ]

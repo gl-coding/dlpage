@@ -1167,3 +1167,107 @@ def get_custom_links_api(request):
             'status': 'error',
             'message': 'Only GET method is allowed'
         }, status=405)
+
+@csrf_exempt
+def edit_custom_link(request, link_id):
+    """编辑自定义链接"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            
+            # 查找链接
+            link = CustomLink.objects.get(id=link_id)
+            
+            # 获取参数
+            title = data.get('title', '').strip()
+            url = data.get('url', '').strip()
+            description = data.get('description', '').strip()
+            category = data.get('category', '').strip()
+            
+            # 验证必填参数
+            if not title or not url:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '标题和链接地址不能为空'
+                }, status=400)
+            
+            # 验证URL格式
+            if not (url.startswith('http://') or url.startswith('https://')):
+                url = 'https://' + url
+            
+            # 更新链接信息
+            link.title = title
+            link.url = url
+            link.description = description
+            link.category = category or '未分类'
+            link.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '链接更新成功',
+                'link': {
+                    'id': link.id,
+                    'title': link.title,
+                    'url': link.url,
+                    'description': link.description,
+                    'category': link.category,
+                    'updated_at': link.updated_at.isoformat()
+                }
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except CustomLink.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': '链接不存在'
+            }, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '请求数据格式错误'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'更新失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+def get_custom_link_detail(request, link_id):
+    """获取单个链接的详细信息用于编辑"""
+    if request.method == 'GET':
+        try:
+            link = CustomLink.objects.get(id=link_id, is_active=True)
+            
+            return JsonResponse({
+                'status': 'success',
+                'link': {
+                    'id': link.id,
+                    'title': link.title,
+                    'url': link.url,
+                    'description': link.description,
+                    'category': link.category,
+                    'click_count': link.click_count,
+                    'created_at': link.created_at.isoformat(),
+                    'updated_at': link.updated_at.isoformat()
+                }
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except CustomLink.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': '链接不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取链接信息失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)

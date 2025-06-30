@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api
+from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api, edit_custom_link, get_custom_link_detail
 
 urlpatterns = [
     path('', post_data, name='post_data'),
@@ -33,6 +33,8 @@ urlpatterns = [
     path('links/', links_display_page, name='links_display_page'),  # 展示页面
     path('links/manage/', custom_links_page, name='custom_links_page'),  # 管理页面
     path('links/add/', add_custom_link, name='add_custom_link'),
+    path('links/edit/<int:link_id>/', edit_custom_link, name='edit_custom_link'),
+    path('links/detail/<int:link_id>/', get_custom_link_detail, name='get_custom_link_detail'),
     path('links/delete/<int:link_id>/', delete_custom_link, name='delete_custom_link'),
     path('links/click/<int:link_id>/', click_custom_link, name='click_custom_link'),
     path('links/api/', get_custom_links_api, name='get_custom_links_api'),
