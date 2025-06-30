@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的链接收藏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .manage-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .manage-btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: translateY(-2px);
+        }
+        
+        .search-box {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e9ecef;
+            border-radius: 50px;
+            font-size: 1.1em;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #74b9ff;
+            box-shadow: 0 0 0 3px rgba(116, 185, 255, 0.1);
+        }
+        
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-tab {
+            padding: 8px 16px;
+            background: #e9ecef;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9em;
+        }
+        
+        .filter-tab.active {
+            background: #74b9ff;
+            color: white;
+        }
+        
+        .filter-tab:hover {
+            background: #74b9ff;
+            color: white;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .categories {
+            display: grid;
+            gap: 25px;
+        }
+        
+        .category {
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        .category:hover {
+            transform: translateY(-3px);
+        }
+        
+        .category-header {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .category-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-count {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        
+        .links-grid {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        
+        .link-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 4px solid #74b9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .link-card:hover {
+            background: #e3f2fd;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .link-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            text-decoration: none;
+            display: block;
+        }
+        
+        .link-url {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+        
+        .link-description {
+            color: #495057;
+            font-size: 0.95em;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+        
+        .link-stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #6c757d;
+        }
+        
+        .click-count {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        
+        .link-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .external-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            color: #74b9ff;
+            font-size: 1.2em;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 1.5em;
+        }
+        
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+        
+        .empty-state a {
+            color: #74b9ff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 20px;
+            }
+            
+            .manage-btn {
+                position: static;
+                margin-top: 15px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-tabs {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 我的链接收藏</h1>
+            <p>快速访问您收藏的网站和资源</p>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_links }}</span>
+                    <span class="stat-label">收藏链接</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ categories|length }}</span>
+                    <span class="stat-label">分类</span>
+                </div>
+            </div>
+            <a href="/datapost/links/manage/" class="manage-btn">
+                ⚙️ 管理链接
+            </a>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索链接标题、描述或网址...">
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-category="all">全部</button>
+                {% for category_name in categories.keys %}
+                <button class="filter-tab" data-category="{{ category_name }}">{{ category_name }}</button>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="categories" id="categoriesContainer">
+                {% if categories %}
+                    {% for category_name, links in categories.items %}
+                    <div class="category" data-category="{{ category_name }}">
+                        <div class="category-header">
+                            <span class="category-title">
+                                {% if category_name == "搜索引擎" %}🔍
+                                {% elif category_name == "开发工具" %}💻
+                                {% elif category_name == "学习资源" %}📚
+                                {% elif category_name == "娱乐" %}🎵
+                                {% elif category_name == "购物" %}🛒
+                                {% elif category_name == "社交" %}👥
+                                {% else %}📂{% endif %}
+                                {{ category_name }}
+                            </span>
+                            <span class="category-count">{{ links|length }} 个</span>
+                        </div>
+                        <div class="links-grid">
+                            {% for link in links %}
+                            <div class="link-card" onclick="openLink({{ link.id }}, '{{ link.url|escapejs }}')">
+                                <span class="external-icon">🔗</span>
+                                <div class="link-title">{{ link.title }}</div>
+                                <div class="link-url">{{ link.url }}</div>
+                                {% if link.description %}
+                                <div class="link-description">{{ link.description }}</div>
+                                {% endif %}
+                                <div class="link-stats">
+                                    <div class="link-meta">
+                                        <span class="click-count">{{ link.click_count }} 次访问</span>
+                                    </div>
+                                    <div>{{ link.created_at|date:"m/d" }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <h3>🔗 还没有任何链接</h3>
+                        <p>开始收藏您喜欢的网站吧！</p>
+                        <a href="/datapost/links/manage/">立即添加链接</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 搜索功能
+        const searchInput = document.getElementById('searchInput');
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const categories = categoriesContainer.querySelectorAll('.category');
+            
+            categories.forEach(category => {
+                const links = category.querySelectorAll('.link-card');
+                let hasVisibleLinks = false;
+                
+                links.forEach(link => {
+                    const title = link.querySelector('.link-title').textContent.toLowerCase();
+                    const url = link.querySelector('.link-url').textContent.toLowerCase();
+                    const description = link.querySelector('.link-description');
+                    const descText = description ? description.textContent.toLowerCase() : '';
+                    
+                    if (title.includes(searchTerm) || url.includes(searchTerm) || descText.includes(searchTerm)) {
+                        link.style.display = '';
+                        hasVisibleLinks = true;
+                    } else {
+                        link.style.display = 'none';
+                    }
+                });
+                
+                category.style.display = hasVisibleLinks ? '' : 'none';
+            });
+        });
+        
+        // 分类筛选
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有active类
+                filterTabs.forEach(t => t.classList.remove('active'));
+                // 添加active类到当前tab
+                this.classList.add('active');
+                
+                const selectedCategory = this.dataset.category;
+                const categories = categoriesContainer.querySelectorAll('.category');
+                
+                if (selectedCategory === 'all') {
+                    categories.forEach(category => {
+                        category.style.display = '';
+                    });
+                } else {
+                    categories.forEach(category => {
+                        if (category.dataset.category === selectedCategory) {
+                            category.style.display = '';
+                        } else {
+                            category.style.display = 'none';
+                        }
+                    });
+                }
+                
+                // 清空搜索框
+                searchInput.value = '';
+            });
+        });
+
+        // 打开链接并统计点击
+        function openLink(linkId, url) {
+            fetch(`/datapost/links/click/${linkId}/`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.open(url, '_blank');
+                }
+            })
+            .catch(error => {
+                // 即使统计失败也要打开链接
+                window.open(url, '_blank');
+            });
+        }
+    </script>
+</body>
+</html> 

@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DataPost, VideoText, VoiceData, TypeContent
+from .models import DataPost, VideoText, VoiceData, TypeContent, CustomLink
 import json
 import os
 import time
@@ -956,6 +956,211 @@ def clear_type_content(request):
             return JsonResponse({
                 'status': 'error',
                 'message': f'清空数据失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+
+# CustomLink 相关接口
+
+def links_display_page(request):
+    """链接展示页面 - 专注于浏览和访问链接"""
+    links = CustomLink.objects.filter(is_active=True).order_by('-created_at')
+    
+    # 按分类分组
+    categories = {}
+    for link in links:
+        category = link.category or '未分类'
+        if category not in categories:
+            categories[category] = []
+        categories[category].append(link)
+    
+    context = {
+        'categories': categories,
+        'total_links': links.count()
+    }
+    
+    return render(request, 'datapost/links_display.html', context)
+
+def custom_links_page(request):
+    """自定义链接管理页面 - 专注于管理功能"""
+    links = CustomLink.objects.filter(is_active=True).order_by('-created_at')
+    
+    # 按分类分组
+    categories = {}
+    for link in links:
+        category = link.category or '未分类'
+        if category not in categories:
+            categories[category] = []
+        categories[category].append(link)
+    
+    context = {
+        'categories': categories,
+        'total_links': links.count()
+    }
+    
+    return render(request, 'datapost/custom_links.html', context)
+
+@csrf_exempt
+def add_custom_link(request):
+    """添加自定义链接的API接口"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            
+            title = data.get('title', '').strip()
+            url = data.get('url', '').strip()
+            description = data.get('description', '').strip()
+            category = data.get('category', '').strip()
+            
+            # 验证必填参数
+            if not title or not url:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '标题和链接地址不能为空'
+                }, status=400)
+            
+            # 验证URL格式
+            if not (url.startswith('http://') or url.startswith('https://')):
+                url = 'https://' + url
+            
+            # 创建链接
+            custom_link = CustomLink.objects.create(
+                title=title,
+                url=url,
+                description=description,
+                category=category or '未分类'
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '链接添加成功',
+                'link': {
+                    'id': custom_link.id,
+                    'title': custom_link.title,
+                    'url': custom_link.url,
+                    'description': custom_link.description,
+                    'category': custom_link.category,
+                    'created_at': custom_link.created_at.isoformat()
+                }
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': '请求数据格式错误'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'添加失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+@csrf_exempt
+def delete_custom_link(request, link_id):
+    """删除自定义链接"""
+    if request.method == 'POST':
+        try:
+            link = CustomLink.objects.get(id=link_id)
+            link_info = {
+                'title': link.title,
+                'url': link.url
+            }
+            link.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'链接 "{link_info["title"]}" 已删除'
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except CustomLink.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': '链接不存在'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'删除失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+@csrf_exempt
+def click_custom_link(request, link_id):
+    """点击链接统计"""
+    if request.method == 'POST':
+        try:
+            link = CustomLink.objects.get(id=link_id, is_active=True)
+            link.click_count += 1
+            link.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'url': link.url,
+                'click_count': link.click_count
+            })
+            
+        except CustomLink.DoesNotExist:
+            return JsonResponse({
+                'status': 'error',
+                'message': '链接不存在或已禁用'
+            }, status=404)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'操作失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only POST method is allowed'
+        }, status=405)
+
+def get_custom_links_api(request):
+    """获取链接列表的API接口"""
+    if request.method == 'GET':
+        try:
+            category_filter = request.GET.get('category', '')
+            
+            queryset = CustomLink.objects.filter(is_active=True)
+            if category_filter:
+                queryset = queryset.filter(category__icontains=category_filter)
+            
+            queryset = queryset.order_by('-created_at')
+            
+            links = []
+            for link in queryset:
+                links.append({
+                    'id': link.id,
+                    'title': link.title,
+                    'url': link.url,
+                    'description': link.description,
+                    'category': link.category,
+                    'click_count': link.click_count,
+                    'created_at': link.created_at.isoformat()
+                })
+            
+            return JsonResponse({
+                'status': 'success',
+                'total_count': len(links),
+                'links': links
+            }, json_dumps_params={'ensure_ascii': False})
+            
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取数据失败: {str(e)}'
             }, status=500)
     else:
         return JsonResponse({

@@ -36,3 +36,21 @@ class TypeContent(models.Model):
     
     def __str__(self):
         return f"{self.type} - {self.content[:50]}..."
+
+class CustomLink(models.Model):
+    title = models.CharField(max_length=200, verbose_name="链接标题")
+    url = models.URLField(max_length=500, verbose_name="链接地址")
+    description = models.TextField(blank=True, verbose_name="备注说明")
+    category = models.CharField(max_length=100, blank=True, verbose_name="分类")
+    is_active = models.BooleanField(default=True, verbose_name="是否启用")
+    click_count = models.IntegerField(default=0, verbose_name="点击次数")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    
+    class Meta:
+        verbose_name = "自定义链接"
+        verbose_name_plural = "自定义链接"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.url}"
