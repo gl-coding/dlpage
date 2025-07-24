@@ -1,0 +1,403 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}编辑文章 - {{ article.title }}{% endblock %}
+
+{% block header %}编辑文章{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'article_list_page' %}" class="text-decoration-none">
+                        <i class="bi bi-list-ul me-1"></i>文章列表
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'article_detail_page' article.id %}" class="text-decoration-none">
+                        {{ article.title|truncatechars:25 }}
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">编辑文章</li>
+            </ol>
+        </nav>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-body p-4 p-md-5">
+                        <form id="article-edit-form">
+                            <div class="mb-4">
+                                <label for="title" class="form-label fw-semibold">
+                                    <i class="bi bi-type text-warning me-1"></i>
+                                    文章标题 <span class="text-danger">*</span>
+                                </label>
+                                <input 
+                                    type="text" 
+                                    class="form-control form-control-lg" 
+                                    id="title" 
+                                    name="title" 
+                                    value="{{ article.title }}" 
+                                    placeholder="修改文章标题..." 
+                                    required
+                                >
+                                <small class="form-text text-muted">一个好标题能让更多人阅读您的文章</small>
+                            </div>
+                            
+                                                         <div class="mb-4">
+                                 <label for="article_type_select" class="form-label fw-semibold">
+                                     <i class="bi bi-tags text-warning me-1"></i>
+                                     文章类型 <span class="text-danger">*</span>
+                                 </label>
+                                 <div class="input-group">
+                                     <select class="form-select" id="article_type_select" onchange="handleTypeSelection()">
+                                         <option value="">选择预设类型</option>
+                                         <option value="技术分享" data-type="技术分享" {% if article.article_type == '技术分享' %}selected{% endif %}>技术分享</option>
+                                         <option value="生活感悟" data-type="生活感悟" {% if article.article_type == '生活感悟' %}selected{% endif %}>生活感悟</option>
+                                         <option value="教程指南" data-type="教程指南" {% if article.article_type == '教程指南' %}selected{% endif %}>教程指南</option>
+                                         <option value="项目总结" data-type="项目总结" {% if article.article_type == '项目总结' %}selected{% endif %}>项目总结</option>
+                                         <option value="学习笔记" data-type="学习笔记" {% if article.article_type == '学习笔记' %}selected{% endif %}>学习笔记</option>
+                                         <option value="工作心得" data-type="工作心得" {% if article.article_type == '工作心得' %}selected{% endif %}>工作心得</option>
+                                         <option value="随笔杂谈" data-type="随笔杂谈" {% if article.article_type == '随笔杂谈' %}selected{% endif %}>随笔杂谈</option>
+                                         <option value="custom" {% if article.article_type not in '技术分享,生活感悟,教程指南,项目总结,学习笔记,工作心得,随笔杂谈' %}selected{% endif %}>自定义类型...</option>
+                                         <option value="manage" style="border-top: 1px solid #dee2e6; color: #6c757d;">🔧 管理类型</option>
+                                     </select>
+                                     <button class="btn btn-outline-secondary" type="button" onclick="toggleCustomType()" id="custom_toggle_btn">
+                                         <i class="bi bi-{% if article.article_type not in '技术分享,生活感悟,教程指南,项目总结,学习笔记,工作心得,随笔杂谈' %}dash{% else %}plus{% endif %}-circle"></i>
+                                     </button>
+                                 </div>
+                                 <input 
+                                     type="text" 
+                                     class="form-control mt-2 {% if article.article_type in '技术分享,生活感悟,教程指南,项目总结,学习笔记,工作心得,随笔杂谈' %}d-none{% endif %}" 
+                                     id="article_type_custom" 
+                                     name="article_type" 
+                                     value="{% if article.article_type not in '技术分享,生活感悟,教程指南,项目总结,学习笔记,工作心得,随笔杂谈' %}{{ article.article_type }}{% endif %}"
+                                     placeholder="输入自定义文章类型..." 
+                                 >
+                                 <input type="hidden" id="article_type" name="article_type" value="{{ article.article_type }}" required>
+                                 <small class="form-text text-muted">选择预设类型或修改为自定义类型</small>
+                             </div>
+                            
+                            <div class="mb-4">
+                                <label for="content" class="form-label fw-semibold">
+                                    <i class="bi bi-file-text text-warning me-1"></i>
+                                    文章内容 <span class="text-danger">*</span>
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="content" 
+                                    name="content" 
+                                    rows="15" 
+                                    placeholder="编辑您的文章内容..." 
+                                    required
+                                >{{ article.content }}</textarea>
+                                <small class="form-text text-muted">支持换行格式，请保持内容的完整性</small>
+                            </div>
+
+                            <!-- 音频链接 -->
+                            <div class="mb-4">
+                                <label for="audio_url" class="form-label fw-semibold">
+                                    <i class="bi bi-music-note text-success me-1"></i>
+                                    音频链接
+                                </label>
+                                <input 
+                                    type="url" 
+                                    class="form-control" 
+                                    id="audio_url" 
+                                    name="audio_url" 
+                                    value="{{ article.audio_url }}"
+                                    placeholder="https://example.com/audio.mp3"
+                                >
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    支持常见音频格式：MP3、WAV、AAC等（可选）
+                                </small>
+                            </div>
+
+                            <!-- 视频链接 -->
+                            <div class="mb-4">
+                                <label for="video_url" class="form-label fw-semibold">
+                                    <i class="bi bi-play-circle text-danger me-1"></i>
+                                    视频链接
+                                </label>
+                                <input 
+                                    type="url" 
+                                    class="form-control" 
+                                    id="video_url" 
+                                    name="video_url" 
+                                    value="{{ article.video_url }}"
+                                    placeholder="https://www.youtube.com/watch?v=... 或其他视频链接"
+                                >
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    支持YouTube、Bilibili等平台链接或直链视频（可选）
+                                </small>
+                            </div>
+
+                            <!-- 备注 -->
+                            <div class="mb-5">
+                                <label for="remarks" class="form-label fw-semibold">
+                                    <i class="bi bi-chat-left-text text-info me-1"></i>
+                                    备注
+                                </label>
+                                <textarea 
+                                    class="form-control" 
+                                    id="remarks" 
+                                    name="remarks" 
+                                    rows="4" 
+                                    placeholder="添加备注信息、标签或其他说明..."
+                                >{{ article.remarks }}</textarea>
+                                <small class="form-text text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    可以记录灵感来源、相关链接、待办事项等（可选）
+                                </small>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                <button type="submit" class="btn btn-success btn-lg px-4">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    保存修改
+                                </button>
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <a href="{% url 'article_detail_page' article.id %}" class="btn btn-outline-danger">
+                                        <i class="bi bi-x-circle me-1"></i>
+                                        取消编辑
+                                    </a>
+                                    <a href="{% url 'article_list_page' %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-list-ul me-1"></i>
+                                        返回列表
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知消息 -->
+    <div id="notification" class="notification" style="display: none;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.getElementById('article-edit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const title = document.getElementById('title').value.trim();
+        const content = document.getElementById('content').value.trim();
+        const article_type = document.getElementById('article_type').value.trim();
+        
+        // 前端验证
+        if (!title) {
+            showNotification('请输入文章标题', 'error');
+            return;
+        }
+        
+        if (!content) {
+            showNotification('请输入文章内容', 'error');
+            return;
+        }
+        
+        if (!article_type) {
+            showNotification('请输入文章类型', 'error');
+            return;
+        }
+        
+        // 禁用提交按钮，防止重复提交
+        const submitBtn = document.querySelector('.submit-btn');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = '保存中...';
+        
+        // 发送数据
+        fetch('{% url "update_article" article.id %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                title: title,
+                content: content,
+                article_type: article_type
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showNotification(data.message, 'success');
+                
+                // 1.5秒后跳转到详情页
+                setTimeout(function() {
+                    window.location.href = '{% url "article_detail_page" article.id %}';
+                }, 1500);
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(error => {
+            showNotification('保存失败：' + error, 'error');
+        })
+        .finally(() => {
+            // 恢复提交按钮
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        });
+    });
+    
+    function showNotification(message, type = 'primary') {
+        const notification = document.getElementById('notification');
+        notification.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        notification.style.display = 'block';
+        
+        // 3秒后自动隐藏
+        setTimeout(function() {
+            const alert = notification.querySelector('.alert');
+            if (alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 3000);
+    }
+
+    function handleTypeSelection() {
+        const select = document.getElementById('article_type_select');
+        const customInput = document.getElementById('article_type_custom');
+        const hiddenInput = document.getElementById('article_type');
+        const toggleBtn = document.getElementById('custom_toggle_btn');
+        
+        if (select.value === 'manage') {
+            // 打开类型管理功能（重定向到提交页面管理）
+            if (confirm('类型管理功能在提交页面中，是否前往管理？')) {
+                window.open('/datapost/article/submit/', '_blank');
+            }
+            select.value = hiddenInput.value; // 恢复原来的选择
+        } else if (select.value === 'custom') {
+            // 显示自定义输入框
+            customInput.classList.remove('d-none');
+            customInput.focus();
+            hiddenInput.value = customInput.value;
+            toggleBtn.innerHTML = '<i class="bi bi-dash-circle"></i>';
+        } else if (select.value !== '') {
+            // 选择了预设类型
+            customInput.classList.add('d-none');
+            hiddenInput.value = select.value;
+            toggleBtn.innerHTML = '<i class="bi bi-plus-circle"></i>';
+        } else {
+            // 未选择任何类型
+            customInput.classList.add('d-none');
+            hiddenInput.value = '';
+            toggleBtn.innerHTML = '<i class="bi bi-plus-circle"></i>';
+        }
+    }
+
+    function toggleCustomType() {
+        const select = document.getElementById('article_type_select');
+        const customInput = document.getElementById('article_type_custom');
+        const toggleBtn = document.getElementById('custom_toggle_btn');
+        
+        if (customInput.classList.contains('d-none')) {
+            // 显示自定义输入框
+            select.value = 'custom';
+            customInput.classList.remove('d-none');
+            customInput.focus();
+            toggleBtn.innerHTML = '<i class="bi bi-dash-circle"></i>';
+        } else {
+            // 隐藏自定义输入框
+            select.value = '';
+            customInput.classList.add('d-none');
+            document.getElementById('article_type').value = '';
+            toggleBtn.innerHTML = '<i class="bi bi-plus-circle"></i>';
+        }
+    }
+
+    // 监听自定义输入框的变化
+    document.addEventListener('DOMContentLoaded', function() {
+        const customInput = document.getElementById('article_type_custom');
+        const hiddenInput = document.getElementById('article_type');
+        
+        customInput.addEventListener('input', function() {
+            hiddenInput.value = this.value;
+        });
+
+        // 加载隐藏的类型
+        loadHiddenTypes();
+    });
+
+    // 获取默认预设类型
+    function getDefaultPresetTypes() {
+        return ['技术分享', '生活感悟', '教程指南', '项目总结', '学习笔记', '工作心得', '随笔杂谈'];
+    }
+
+    // 获取自定义添加的类型
+    function getCustomTypes() {
+        const custom = localStorage.getItem('customArticleTypes');
+        return custom ? JSON.parse(custom) : [];
+    }
+
+    // 获取已删除的预设类型
+    function getDeletedTypes() {
+        const deleted = localStorage.getItem('deletedArticleTypes');
+        return deleted ? JSON.parse(deleted) : [];
+    }
+
+    // 获取所有当前可用的预设类型（默认 + 自定义 - 已删除）
+    function getAllPresetTypes() {
+        const defaultTypes = getDefaultPresetTypes();
+        const customTypes = getCustomTypes();
+        const deletedTypes = getDeletedTypes();
+        
+        // 合并默认类型和自定义类型，然后移除已删除的类型
+        const allTypes = [...defaultTypes, ...customTypes];
+        return allTypes.filter(type => !deletedTypes.includes(type));
+    }
+
+    // 获取隐藏的类型（存储在localStorage中）
+    function getHiddenTypes() {
+        const hidden = localStorage.getItem('hiddenArticleTypes');
+        return hidden ? JSON.parse(hidden) : [];
+    }
+
+    // 加载隐藏类型并更新下拉选择框
+    function loadHiddenTypes() {
+        const hiddenTypes = getHiddenTypes();
+        const deletedTypes = getDeletedTypes();
+        const select = document.getElementById('article_type_select');
+        const customTypes = getCustomTypes();
+        
+        // 首先添加新的自定义类型选项
+        customTypes.forEach(type => {
+            if (!deletedTypes.includes(type)) {
+                // 检查是否已存在此选项
+                const existingOption = Array.from(select.options).find(option => option.value === type);
+                if (!existingOption) {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    option.setAttribute('data-type', type);
+                    // 插入到 "自定义类型..." 选项之前
+                    const customOption = select.querySelector('option[value="custom"]');
+                    select.insertBefore(option, customOption);
+                }
+            }
+        });
+        
+        // 隐藏相应的选项（隐藏的类型 + 已删除的类型）
+        Array.from(select.options).forEach(option => {
+            if (hiddenTypes.includes(option.value) || deletedTypes.includes(option.value)) {
+                option.style.display = 'none';
+            }
+        });
+    }
+</script>
+
+
+{% endblock %} 

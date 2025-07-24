@@ -54,3 +54,22 @@ class CustomLink(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.url}"
+
+class Article(models.Model):
+    title = models.CharField(max_length=200, verbose_name="文章标题")
+    content = models.TextField(verbose_name="文章内容")
+    article_type = models.CharField(max_length=100, verbose_name="文章类型")
+    audio_url = models.URLField(max_length=500, blank=True, verbose_name="音频链接")
+    video_url = models.URLField(max_length=500, blank=True, verbose_name="视频链接")
+    remarks = models.TextField(blank=True, verbose_name="备注")
+    is_read = models.BooleanField(default=False, verbose_name="是否已读")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    
+    class Meta:
+        verbose_name = "文章"
+        verbose_name_plural = "文章"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.article_type}"

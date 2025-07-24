@@ -1,0 +1,212 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}{{ article.title }} - 文章详情{% endblock %}
+
+{% block header %}文章详情{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'article_list_page' %}" class="text-decoration-none">
+                        <i class="bi bi-list-ul me-1"></i>文章列表
+                    </a>
+                </li>
+                <li class="breadcrumb-item active">文章详情</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <!-- Article Header -->
+                <div class="card mb-4">
+                    <div class="card-header {% if article.is_read %}bg-success{% else %}bg-primary{% endif %} text-white">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h1 class="h3 mb-2 d-flex align-items-center">
+                                    {% if article.is_read %}
+                                        <i class="bi bi-check-circle-fill me-2"></i>
+                                    {% else %}
+                                        <i class="bi bi-circle me-2"></i>
+                                    {% endif %}
+                                    {{ article.title }}
+                                </h1>
+                                <span class="badge bg-light bg-opacity-25 fs-6">
+                                    <i class="bi bi-tag me-1"></i>{{ article.article_type }}
+                                </span>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-light btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'article_edit_page' article.id %}">
+                                        <i class="bi bi-pencil-square me-2"></i>编辑文章
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#" onclick="deleteArticle({{ article.id }}, '{{ article.title|escapejs }}')">
+                                        <i class="bi bi-trash me-2"></i>删除文章
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Meta Information -->
+                    <div class="card-body">
+                        <div class="row text-muted small mb-3">
+                            <div class="col-md-6">
+                                <i class="bi bi-calendar-plus me-1"></i>
+                                <span class="fw-semibold">发布时间：</span>
+                                {{ article.created_at|date:"Y年m月d日 H:i" }}
+                            </div>
+                            {% if article.updated_at != article.created_at %}
+                                <div class="col-md-6">
+                                    <i class="bi bi-pencil me-1"></i>
+                                    <span class="fw-semibold">更新时间：</span>
+                                    {{ article.updated_at|date:"Y年m月d日 H:i" }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Article Content -->
+                        <div class="content-section">
+                            <h5 class="border-bottom pb-2 mb-3">
+                                <i class="bi bi-file-text text-primary me-2"></i>
+                                文章内容
+                            </h5>
+                            <div class="content-preview">
+                                {{ article.content|linebreaks }}
+                            </div>
+                        </div>
+
+                        <!-- Media Links and Remarks -->
+                        {% if article.audio_url or article.video_url or article.remarks %}
+                            <div class="content-section mt-4">
+                                <h5 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-paperclip text-info me-2"></i>
+                                    附加信息
+                                </h5>
+                                
+                                {% if article.audio_url %}
+                                    <div class="mb-3">
+                                        <h6 class="fw-semibold">
+                                            <i class="bi bi-music-note text-success me-1"></i>
+                                            音频链接
+                                        </h6>
+                                        <div class="alert alert-success bg-success bg-opacity-10 border-success">
+                                            <a href="{{ article.audio_url }}" target="_blank" class="text-success text-decoration-none fw-medium">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>
+                                                {{ article.audio_url }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if article.video_url %}
+                                    <div class="mb-3">
+                                        <h6 class="fw-semibold">
+                                            <i class="bi bi-play-circle text-danger me-1"></i>
+                                            视频链接
+                                        </h6>
+                                        <div class="alert alert-danger bg-danger bg-opacity-10 border-danger">
+                                            <a href="{{ article.video_url }}" target="_blank" class="text-danger text-decoration-none fw-medium">
+                                                <i class="bi bi-box-arrow-up-right me-1"></i>
+                                                {{ article.video_url }}
+                                            </a>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {% if article.remarks %}
+                                    <div class="mb-3">
+                                        <h6 class="fw-semibold">
+                                            <i class="bi bi-chat-left-text text-info me-1"></i>
+                                            备注
+                                        </h6>
+                                        <div class="alert alert-info bg-info bg-opacity-10 border-info">
+                                            {{ article.remarks|linebreaks }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="d-flex gap-3 mb-4">
+                    <a href="{% url 'article_list_page' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>返回列表
+                    </a>
+                    <button onclick="toggleReadStatus({{ article.id }}, {{ article.is_read|yesno:'true,false' }})" class="btn {% if article.is_read %}btn-secondary{% else %}btn-success{% endif %}">
+                        {% if article.is_read %}
+                            <i class="bi bi-check-square me-1"></i>已读
+                        {% else %}
+                            <i class="bi bi-square me-1"></i>标记已读
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'article_edit_page' article.id %}" class="btn btn-warning">
+                        <i class="bi bi-pencil-square me-1"></i>编辑文章
+                    </a>
+                    <button onclick="deleteArticle({{ article.id }}, '{{ article.title|escapejs }}')" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i>删除文章
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function deleteArticle(articleId, articleTitle) {
+        if (confirm(`确定要删除文章 "${articleTitle}" 吗？此操作不可恢复！`)) {
+            fetch(`/datapost/article/api/delete/${articleId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.href = '{% url "article_list_page" %}';
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('删除失败: ' + error);
+            });
+        }
+    }
+
+    function toggleReadStatus(articleId, currentStatus) {
+        fetch(`/datapost/article/api/toggle-read/${articleId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert(data.message);
+                // 刷新页面以显示更新后的状态
+                location.reload();
+            } else {
+                alert('操作失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('操作失败：' + error);
+        });
+    }
+</script>
+
+
+{% endblock %} 

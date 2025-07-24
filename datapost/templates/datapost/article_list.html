@@ -1,0 +1,297 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}文章列表{% endblock %}
+
+{% block header %}文章列表{% endblock %}
+
+{% block content %}
+    <div class="container-fluid">
+        {% if articles %}
+            <!-- Quick Stats and Actions -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                    <div class="alert alert-info mb-0" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>共 {{ total_count }} 篇文章</strong> - 使用导航栏可以快速写新文章
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex justify-content-end align-items-center">
+                    <button type="button" class="btn btn-outline-danger" onclick="deleteAllReadArticles()">
+                        <i class="bi bi-trash3 me-1"></i>
+                        删除所有已读文章
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                {% for article in articles %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="card article-card h-100 {% if article.is_read %}border-success{% else %}border-warning{% endif %}">
+                            <div class="card-header {% if article.is_read %}bg-success{% else %}bg-primary{% endif %} text-white">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h5 class="card-title mb-0 me-2 d-flex align-items-center" style="line-height: 1.4;">
+                                        {% if article.is_read %}
+                                            <i class="bi bi-check-circle-fill me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-circle me-2"></i>
+                                        {% endif %}
+                                        {{ article.title }}
+                                    </h5>
+                                    <span class="badge bg-light bg-opacity-25">{{ article.article_type }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body d-flex flex-column">
+                                <div class="content-preview mb-3 flex-grow-1">
+                                    <p class="mb-2">{{ article.content|truncatewords:25 }}</p>
+                                    {% if article.content|length > 150 %}
+                                        <button 
+                                            class="btn btn-link btn-sm p-0 text-decoration-none" 
+                                            onclick="toggleContent({{ article.id }})"
+                                            data-expanded="false"
+                                        >
+                                            <i class="bi bi-chevron-down me-1"></i>
+                                            <span>展开全文</span>
+                                        </button>
+                                        <div class="collapse mt-2" id="full-content-{{ article.id }}">
+                                            <p class="mb-0">{{ article.content }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- 媒体链接和备注 -->
+                                {% if article.audio_url or article.video_url or article.remarks %}
+                                    <div class="media-info mb-3">
+                                        {% if article.audio_url %}
+                                            <div class="mb-2">
+                                                <span class="badge bg-success bg-opacity-25 text-success">
+                                                    <i class="bi bi-music-note me-1"></i>
+                                                    <a href="{{ article.audio_url }}" target="_blank" class="text-success text-decoration-none">音频链接</a>
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                        {% if article.video_url %}
+                                            <div class="mb-2">
+                                                <span class="badge bg-danger bg-opacity-25 text-danger">
+                                                    <i class="bi bi-play-circle me-1"></i>
+                                                    <a href="{{ article.video_url }}" target="_blank" class="text-danger text-decoration-none">视频链接</a>
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                        {% if article.remarks %}
+                                            <div class="mb-2">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-chat-left-text me-1"></i>
+                                                    <strong>备注：</strong>{{ article.remarks|truncatewords:10 }}
+                                                </small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="text-muted small mb-3">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        {{ article.created_at|date:"Y-m-d H:i" }}
+                                    </div>
+                                    {% if article.updated_at != article.created_at %}
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-pencil me-1"></i>
+                                            {{ article.updated_at|date:"Y-m-d H:i" }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-grid gap-2 d-md-flex">
+                                    <a href="{% url 'article_detail_page' article.id %}" class="btn btn-outline-primary btn-sm flex-fill">
+                                        <i class="bi bi-eye me-1"></i>查看
+                                    </a>
+                                    <a href="{% url 'article_edit_page' article.id %}" class="btn btn-outline-warning btn-sm flex-fill">
+                                        <i class="bi bi-pencil-square me-1"></i>编辑
+                                    </a>
+                                    <button onclick="toggleReadStatus({{ article.id }}, {{ article.is_read|yesno:'true,false' }})" class="btn {% if article.is_read %}btn-outline-secondary{% else %}btn-outline-success{% endif %} btn-sm flex-fill">
+                                        {% if article.is_read %}
+                                            <i class="bi bi-check-square me-1"></i>已读
+                                        {% else %}
+                                            <i class="bi bi-square me-1"></i>标记已读
+                                        {% endif %}
+                                    </button>
+                                    <button onclick="deleteArticle({{ article.id }}, '{{ article.title|escapejs }}')" class="btn btn-outline-danger btn-sm flex-fill">
+                                        <i class="bi bi-trash me-1"></i>删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <div class="card">
+                    <div class="card-body py-5">
+                        <i class="bi bi-journal-x display-1 text-muted mb-4"></i>
+                        <h3 class="text-muted mb-3">暂无文章</h3>
+                        <p class="text-muted mb-4">还没有发布任何文章，开始创作您的第一篇文章吧！</p>
+                        <a href="{% url 'article_submit_page' %}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-circle me-1"></i>
+                            创建第一篇文章
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleContent(articleId) {
+        const fullContent = document.getElementById(`full-content-${articleId}`);
+        const toggleBtn = document.querySelector(`[onclick="toggleContent(${articleId})"]`);
+        const icon = toggleBtn.querySelector('i');
+        const text = toggleBtn.querySelector('span');
+        
+        const bsCollapse = new bootstrap.Collapse(fullContent, {toggle: false});
+        
+        if (toggleBtn.dataset.expanded === 'false') {
+            bsCollapse.show();
+            toggleBtn.dataset.expanded = 'true';
+            icon.className = 'bi bi-chevron-up me-1';
+            text.textContent = '收起';
+        } else {
+            bsCollapse.hide();
+            toggleBtn.dataset.expanded = 'false';
+            icon.className = 'bi bi-chevron-down me-1';
+            text.textContent = '展开全文';
+        }
+    }
+    
+    function deleteArticle(articleId, articleTitle) {
+        if (confirm(`确定要删除文章 "${articleTitle}" 吗？此操作不可恢复！`)) {
+            fetch(`/datapost/article/api/delete/${articleId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('删除失败: ' + error);
+            });
+        }
+    }
+
+    function toggleReadStatus(articleId, currentStatus) {
+        fetch(`/datapost/article/api/toggle-read/${articleId}/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 显示成功消息
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+                
+                // 1.5秒后自动刷新页面
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                alert('操作失败：' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('操作失败：' + error);
+        });
+    }
+
+    function deleteAllReadArticles() {
+        // 获取已读文章数量
+        const readArticles = document.querySelectorAll('.card.border-success');
+        const readCount = readArticles.length;
+        
+        if (readCount === 0) {
+            alert('没有已读文章可以删除！');
+            return;
+        }
+        
+        const confirmMessage = `确定要删除所有已读文章吗？\n\n将会删除 ${readCount} 篇已读文章，此操作不可恢复！`;
+        
+        if (confirm(confirmMessage)) {
+            // 显示加载状态
+            const deleteBtn = document.querySelector('button[onclick="deleteAllReadArticles()"]');
+            const originalHTML = deleteBtn.innerHTML;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>删除中...';
+            
+            fetch('/datapost/article/api/delete-all-read/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 显示成功消息
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>删除成功！</strong> ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+                    
+                    // 2秒后自动刷新页面
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else if (data.status === 'warning') {
+                    // 显示警告消息
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        ${data.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.querySelector('.container-fluid').insertBefore(alertDiv, document.querySelector('.container-fluid').firstChild);
+                    
+                    // 恢复按钮状态
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = originalHTML;
+                } else {
+                    alert('删除失败：' + data.message);
+                    // 恢复按钮状态
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerHTML = originalHTML;
+                }
+            })
+            .catch(error => {
+                alert('删除失败：' + error);
+                // 恢复按钮状态
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalHTML;
+            });
+        }
+    }
+</script>
+
+{% endblock %} 

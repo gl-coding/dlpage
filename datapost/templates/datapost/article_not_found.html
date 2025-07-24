@@ -1,0 +1,59 @@
+{% extends "datapost/base.html" %}
+
+{% block title %}文章未找到{% endblock %}
+
+{% block header %}文章未找到{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="text-center py-5">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h4 class="mb-0">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                页面未找到
+                            </h4>
+                        </div>
+                        <div class="card-body py-5">
+                            <div class="mb-4">
+                                <i class="bi bi-file-earmark-x display-1 text-danger mb-3"></i>
+                                <h3 class="text-danger mb-3">文章不存在</h3>
+                                <p class="text-muted">
+                                    您要查找的文章 
+                                    <span class="badge bg-danger">ID: {{ article_id }}</span> 
+                                    可能已被删除或链接地址有误。
+                                </p>
+                            </div>
+                            
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                <a href="{% url 'article_list_page' %}" class="btn btn-primary">
+                                    <i class="bi bi-list-ul me-1"></i>
+                                    返回文章列表
+                                </a>
+                                <a href="{% url 'article_submit_page' %}" class="btn btn-success">
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    写新文章
+                                </a>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <p class="text-muted small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                如果您认为这是一个错误，请联系管理员或 
+                                <a href="{% url 'article_list_page' %}" class="text-decoration-none">
+                                    浏览所有文章
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% endblock %} 

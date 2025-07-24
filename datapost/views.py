@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DataPost, VideoText, VoiceData, TypeContent, CustomLink
+from .models import DataPost, VideoText, VoiceData, TypeContent, CustomLink, Article
+from django.db.models import Q
 import json
 import os
 import time
@@ -1306,3 +1307,383 @@ def get_custom_link_detail(request, link_id):
             'status': 'error',
             'message': 'Only GET method is allowed'
         }, status=405)
+
+def article_submit_page(request):
+    """文章提交页面"""
+    return render(request, 'datapost/article_submit.html')
+
+@csrf_exempt
+def submit_article(request):
+    """提交文章数据"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            title = data.get('title', '').strip()
+            content = data.get('content', '').strip()
+            article_type = data.get('article_type', '').strip()
+            audio_url = data.get('audio_url', '').strip()
+            video_url = data.get('video_url', '').strip()
+            remarks = data.get('remarks', '').strip()
+            
+            # 验证必填字段
+            if not title:
+                return JsonResponse({'status': 'error', 'message': '文章标题不能为空'}, status=400)
+            
+            if not content:
+                return JsonResponse({'status': 'error', 'message': '文章内容不能为空'}, status=400)
+                
+            if not article_type:
+                return JsonResponse({'status': 'error', 'message': '文章类型不能为空'}, status=400)
+            
+            # 创建文章记录
+            article = Article.objects.create(
+                title=title,
+                content=content,
+                article_type=article_type,
+                audio_url=audio_url,
+                video_url=video_url,
+                remarks=remarks
+            )
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '文章提交成功',
+                'article_id': article.id
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': '无效的JSON数据'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)
+
+def article_list_page(request):
+    """文章列表页面"""
+    articles = Article.objects.all().order_by('-created_at')
+    context = {
+        'articles': articles,
+        'total_count': articles.count()
+    }
+    return render(request, 'datapost/article_list.html', context)
+
+def article_detail_page(request, article_id):
+    """文章详情页面"""
+    try:
+        article = Article.objects.get(id=article_id)
+        context = {'article': article}
+        return render(request, 'datapost/article_detail.html', context)
+    except Article.DoesNotExist:
+        return render(request, 'datapost/article_not_found.html', {'article_id': article_id})
+
+def article_edit_page(request, article_id):
+    """文章编辑页面"""
+    try:
+        article = Article.objects.get(id=article_id)
+        context = {'article': article}
+        return render(request, 'datapost/article_edit.html', context)
+    except Article.DoesNotExist:
+        return render(request, 'datapost/article_not_found.html', {'article_id': article_id})
+
+@csrf_exempt
+def update_article(request, article_id):
+    """更新文章数据"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            title = data.get('title', '').strip()
+            content = data.get('content', '').strip()
+            article_type = data.get('article_type', '').strip()
+            audio_url = data.get('audio_url', '').strip()
+            video_url = data.get('video_url', '').strip()
+            remarks = data.get('remarks', '').strip()
+            
+            # 验证必填字段
+            if not title:
+                return JsonResponse({'status': 'error', 'message': '文章标题不能为空'}, status=400)
+            
+            if not content:
+                return JsonResponse({'status': 'error', 'message': '文章内容不能为空'}, status=400)
+                
+            if not article_type:
+                return JsonResponse({'status': 'error', 'message': '文章类型不能为空'}, status=400)
+            
+            try:
+                article = Article.objects.get(id=article_id)
+                article.title = title
+                article.content = content
+                article.article_type = article_type
+                article.audio_url = audio_url
+                article.video_url = video_url
+                article.remarks = remarks
+                article.save()
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': '文章更新成功',
+                    'article_id': article.id
+                })
+            except Article.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': '文章不存在'}, status=404)
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': '无效的JSON数据'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)
+
+@csrf_exempt
+def delete_article(request, article_id):
+    """删除文章"""
+    if request.method == 'POST':
+        try:
+            article = Article.objects.get(id=article_id)
+            article_title = article.title
+            article.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'文章 "{article_title}" 已删除'
+            })
+        except Article.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': '文章不存在'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)
+
+@csrf_exempt
+def toggle_article_read_status(request, article_id):
+    """切换文章已读状态"""
+    if request.method == 'POST':
+        try:
+            article = Article.objects.get(id=article_id)
+            article.is_read = not article.is_read
+            article.save()
+
+            status_text = "已读" if article.is_read else "未读"
+            return JsonResponse({
+                'status': 'success',
+                'message': f'文章 "{article.title}" 已标记为{status_text}',
+                'is_read': article.is_read
+            })
+        except Article.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': '文章不存在'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)
+
+@csrf_exempt
+def get_articles_json(request):
+    """获取所有文章信息的JSON列表"""
+    if request.method == 'GET':
+        try:
+            # 获取查询参数
+            page = int(request.GET.get('page', 1))
+            page_size = int(request.GET.get('page_size', 10))
+            article_type = request.GET.get('type', '')
+            is_read = request.GET.get('is_read', '')
+            search = request.GET.get('search', '')
+            
+            # 构建查询集
+            articles = Article.objects.all()
+            
+            # 按类型筛选
+            if article_type:
+                articles = articles.filter(article_type=article_type)
+            
+            # 按已读状态筛选
+            if is_read:
+                if is_read.lower() == 'true':
+                    articles = articles.filter(is_read=True)
+                elif is_read.lower() == 'false':
+                    articles = articles.filter(is_read=False)
+            
+            # 搜索功能（标题或内容）
+            if search:
+                articles = articles.filter(
+                    Q(title__icontains=search) | 
+                    Q(content__icontains=search) |
+                    Q(remarks__icontains=search)
+                )
+            
+            # 按创建时间倒序排列
+            articles = articles.order_by('-created_at')
+            
+            # 分页
+            total_count = articles.count()
+            start_index = (page - 1) * page_size
+            end_index = start_index + page_size
+            articles_page = articles[start_index:end_index]
+            
+            # 构建响应数据
+            articles_data = []
+            for article in articles_page:
+                articles_data.append({
+                    'id': article.id,
+                    'title': article.title,
+                    'content': article.content,
+                    'article_type': article.article_type,
+                    'audio_url': article.audio_url,
+                    'video_url': article.video_url,
+                    'remarks': article.remarks,
+                    'is_read': article.is_read,
+                    'created_at': article.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': article.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                })
+            
+            # 计算分页信息
+            total_pages = (total_count + page_size - 1) // page_size
+            has_next = page < total_pages
+            has_prev = page > 1
+            
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'articles': articles_data,
+                    'pagination': {
+                        'current_page': page,
+                        'page_size': page_size,
+                        'total_count': total_count,
+                        'total_pages': total_pages,
+                        'has_next': has_next,
+                        'has_prev': has_prev
+                    }
+                }
+            })
+            
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': '页码或页面大小必须是数字'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持GET请求'}, status=405)
+
+@csrf_exempt
+def update_article_api(request, article_id):
+    """更新文章信息的API接口"""
+    if request.method == 'PUT':
+        try:
+            # 获取文章对象
+            try:
+                article = Article.objects.get(id=article_id)
+            except Article.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': '文章不存在'}, status=404)
+            
+            # 解析请求数据
+            data = json.loads(request.body.decode('utf-8'))
+            
+            # 更新字段（只更新提供的字段）
+            if 'title' in data:
+                title = data['title'].strip()
+                if not title:
+                    return JsonResponse({'status': 'error', 'message': '文章标题不能为空'}, status=400)
+                article.title = title
+            
+            if 'content' in data:
+                content = data['content'].strip()
+                if not content:
+                    return JsonResponse({'status': 'error', 'message': '文章内容不能为空'}, status=400)
+                article.content = content
+            
+            if 'article_type' in data:
+                article_type = data['article_type'].strip()
+                if not article_type:
+                    return JsonResponse({'status': 'error', 'message': '文章类型不能为空'}, status=400)
+                article.article_type = article_type
+            
+            if 'audio_url' in data:
+                article.audio_url = data['audio_url'].strip()
+            
+            if 'video_url' in data:
+                article.video_url = data['video_url'].strip()
+            
+            if 'remarks' in data:
+                article.remarks = data['remarks'].strip()
+            
+            if 'is_read' in data:
+                article.is_read = bool(data['is_read'])
+            
+            # 保存更改
+            article.save()
+            
+            # 返回更新后的文章信息
+            return JsonResponse({
+                'status': 'success',
+                'message': '文章更新成功',
+                'data': {
+                    'id': article.id,
+                    'title': article.title,
+                    'content': article.content,
+                    'article_type': article.article_type,
+                    'audio_url': article.audio_url,
+                    'video_url': article.video_url,
+                    'remarks': article.remarks,
+                    'is_read': article.is_read,
+                    'created_at': article.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': article.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': '无效的JSON数据'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    elif request.method == 'GET':
+        # 获取单个文章信息
+        try:
+            article = Article.objects.get(id=article_id)
+            return JsonResponse({
+                'status': 'success',
+                'data': {
+                    'id': article.id,
+                    'title': article.title,
+                    'content': article.content,
+                    'article_type': article.article_type,
+                    'audio_url': article.audio_url,
+                    'video_url': article.video_url,
+                    'remarks': article.remarks,
+                    'is_read': article.is_read,
+                    'created_at': article.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated_at': article.updated_at.strftime('%Y-%m-%d %H:%M:%S')
+                }
+            })
+        except Article.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': '文章不存在'}, status=404)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持PUT和GET请求'}, status=405)
+
+@csrf_exempt
+def delete_all_read_articles(request):
+    """删除所有已读文章"""
+    if request.method == 'POST':
+        try:
+            # 获取所有已读文章
+            read_articles = Article.objects.filter(is_read=True)
+            deleted_count = read_articles.count()
+            
+            if deleted_count == 0:
+                return JsonResponse({
+                    'status': 'warning',
+                    'message': '没有找到已读文章，无需删除'
+                })
+            
+            # 删除所有已读文章
+            read_articles.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'成功删除 {deleted_count} 篇已读文章',
+                'deleted_count': deleted_count
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)

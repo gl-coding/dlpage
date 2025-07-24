@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, update_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api, edit_custom_link, get_custom_link_detail
+from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, update_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api, edit_custom_link, get_custom_link_detail, article_submit_page, submit_article, article_list_page, article_detail_page, article_edit_page, update_article, delete_article, toggle_article_read_status, get_articles_json, update_article_api, delete_all_read_articles
 
 urlpatterns = [
     path('', post_data, name='post_data'),
@@ -39,4 +39,19 @@ urlpatterns = [
     path('links/delete/<int:link_id>/', delete_custom_link, name='delete_custom_link'),
     path('links/click/<int:link_id>/', click_custom_link, name='click_custom_link'),
     path('links/api/', get_custom_links_api, name='get_custom_links_api'),
+    
+    # 文章相关路由
+    path('article/submit/', article_submit_page, name='article_submit_page'),
+    path('article/list/', article_list_page, name='article_list_page'),
+    path('article/detail/<int:article_id>/', article_detail_page, name='article_detail_page'),
+    path('article/edit/<int:article_id>/', article_edit_page, name='article_edit_page'),
+    path('article/api/', submit_article, name='submit_article'),
+    path('article/api/update/<int:article_id>/', update_article, name='update_article'),
+    path('article/api/delete/<int:article_id>/', delete_article, name='delete_article'),
+    path('article/api/toggle-read/<int:article_id>/', toggle_article_read_status, name='toggle_article_read_status'),
+    
+    # JSON API 接口
+    path('article/api/json/', get_articles_json, name='get_articles_json'),
+    path('article/api/json/<int:article_id>/', update_article_api, name='update_article_api'),
+    path('article/api/delete-all-read/', delete_all_read_articles, name='delete_all_read_articles'),
 ] 
