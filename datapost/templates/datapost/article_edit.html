@@ -207,10 +207,15 @@
         }
         
         // 禁用提交按钮，防止重复提交
-        const submitBtn = document.querySelector('.submit-btn');
-        const originalText = submitBtn.textContent;
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.textContent = '保存中...';
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>保存中...';
+        
+        // 获取其他字段
+        const audio_url = document.getElementById('audio_url').value.trim();
+        const video_url = document.getElementById('video_url').value.trim();
+        const remarks = document.getElementById('remarks').value.trim();
         
         // 发送数据
         fetch('{% url "update_article" article.id %}', {
@@ -221,7 +226,10 @@
             body: JSON.stringify({
                 title: title,
                 content: content,
-                article_type: article_type
+                article_type: article_type,
+                audio_url: audio_url,
+                video_url: video_url,
+                remarks: remarks
             })
         })
         .then(response => response.json())
@@ -243,7 +251,7 @@
         .finally(() => {
             // 恢复提交按钮
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            submitBtn.innerHTML = originalText;
         });
     });
     

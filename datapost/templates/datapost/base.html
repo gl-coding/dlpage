@@ -185,8 +185,8 @@
 
     <!-- Main Content -->
     <main class="{% if 'submit' in request.resolver_match.url_name or 'edit' in request.resolver_match.url_name %}py-4{% else %}pt-4{% endif %}">
-        {% block content %}
-        {% endblock %}
+    {% block content %}
+    {% endblock %}
     </main>
     
     <!-- Bootstrap 5 JS -->
