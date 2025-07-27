@@ -1,0 +1,9 @@
+{
+    "base_url": "http://localhost:8000/datapost",
+    "check_interval": 5,
+    "shutdown_file": "shutdown.txt",
+    "log_file": "shutdown_monitor.log",
+    "enable_logging": true,
+    "backup_old_files": true,
+    "max_backup_files": 10
+} 

@@ -73,3 +73,16 @@ class Article(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.article_type}"
+
+class Shutdown(models.Model):
+    command = models.CharField(max_length=500, verbose_name="命令")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    
+    class Meta:
+        verbose_name = "关机命令"
+        verbose_name_plural = "关机命令"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.command} - {self.created_at}"

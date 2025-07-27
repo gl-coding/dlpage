@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import DataPost, VideoText, VoiceData, TypeContent, CustomLink, Article
+from .models import DataPost, VideoText, VoiceData, TypeContent, CustomLink, Article, Shutdown
 from django.db.models import Q
 import json
 import os
@@ -1687,3 +1687,167 @@ def delete_all_read_articles(request):
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     else:
         return JsonResponse({'status': 'error', 'message': '仅支持POST请求'}, status=405)
+
+# Shutdown 相关视图函数
+@csrf_exempt
+def post_shutdown_command(request):
+    """提交关机命令"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            command = data.get('command')
+            
+            if not command:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': '缺少command字段'
+                }, status=400)
+            
+            # 创建新的关机命令记录
+            shutdown = Shutdown.objects.create(command=command)
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '命令已提交',
+                'data': {
+                    'id': shutdown.id,
+                    'command': shutdown.command,
+                    'created_at': shutdown.created_at.isoformat()
+                }
+            })
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'JSON格式错误'
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'提交失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': '只支持POST请求'
+        }, status=405)
+
+def get_shutdown_commands(request):
+    """获取关机命令列表"""
+    if request.method == 'GET':
+        try:
+            # 获取所有关机命令，按创建时间倒序排列
+            commands = Shutdown.objects.all().order_by('-created_at')
+            
+            # 构建返回数据
+            commands_data = []
+            for cmd in commands:
+                commands_data.append({
+                    'id': cmd.id,
+                    'command': cmd.command,
+                    'created_at': cmd.created_at.isoformat(),
+                    'updated_at': cmd.updated_at.isoformat()
+                })
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '获取成功',
+                'data': commands_data,
+                'count': len(commands_data)
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'获取失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': '只支持GET请求'
+        }, status=405)
+
+@csrf_exempt
+def delete_shutdown_command(request, command_id):
+    """删除指定的关机命令"""
+    if request.method == 'POST':
+        try:
+            # 查找并删除指定的命令
+            command = Shutdown.objects.filter(id=command_id).first()
+            
+            if not command:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'命令ID {command_id} 不存在'
+                }, status=404)
+            
+            deleted_command = command.command
+            command.delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'命令已删除: {deleted_command}'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'删除失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': '只支持POST请求'
+        }, status=405)
+
+@csrf_exempt
+def clear_all_shutdown_commands(request):
+    """清空所有关机命令"""
+    if request.method == 'POST':
+        try:
+            count = Shutdown.objects.count()
+            Shutdown.objects.all().delete()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': f'已清空所有 {count} 条命令'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'清空失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': '只支持POST请求'
+        }, status=405)
+
+def shutdown_page(request):
+    """关机命令页面"""
+    return render(request, 'datapost/shutdown_page.html')
+
+@csrf_exempt
+def send_shutdown_command(request):
+    """发送关机命令"""
+    if request.method == 'POST':
+        try:
+            # 创建关机命令
+            shutdown = Shutdown.objects.create(command="shutdown -h now")
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': '关机命令已发送',
+                'data': {
+                    'id': shutdown.id,
+                    'command': shutdown.command,
+                    'created_at': shutdown.created_at.isoformat()
+                }
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'发送失败: {str(e)}'
+            }, status=500)
+    else:
+        return JsonResponse({
+            'status': 'error',
+            'message': '只支持POST请求'
+        }, status=405)

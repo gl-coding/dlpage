@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, update_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api, edit_custom_link, get_custom_link_detail, article_submit_page, submit_article, article_list_page, article_detail_page, article_edit_page, update_article, delete_article, toggle_article_read_status, get_articles_json, update_article_api, delete_all_read_articles
+from .views import post_data, show_data, clear_data, delete_data, export_all_data, show_json_data, json_data_only, post_video_text, show_video_text, delete_video_text, update_video_text, export_video_text, clear_video_text, video_text_api, create_timestamp_file, delete_single_video, view_log_file, post_voice_data, get_voice_data, get_voice_data_by_id, clear_voice_data, delete_voice_data, post_type_content, get_type_content, get_type_content_by_id, delete_type_content, clear_type_content, links_display_page, custom_links_page, add_custom_link, delete_custom_link, click_custom_link, get_custom_links_api, edit_custom_link, get_custom_link_detail, article_submit_page, submit_article, article_list_page, article_detail_page, article_edit_page, update_article, delete_article, toggle_article_read_status, get_articles_json, update_article_api, delete_all_read_articles, post_shutdown_command, get_shutdown_commands, delete_shutdown_command, clear_all_shutdown_commands, shutdown_page, send_shutdown_command
 
 urlpatterns = [
     path('', post_data, name='post_data'),
@@ -54,4 +54,12 @@ urlpatterns = [
     path('article/api/json/', get_articles_json, name='get_articles_json'),
     path('article/api/json/<int:article_id>/', update_article_api, name='update_article_api'),
     path('article/api/delete-all-read/', delete_all_read_articles, name='delete_all_read_articles'),
+    
+    # Shutdown 相关路由
+    path('shutdown/', post_shutdown_command, name='post_shutdown_command'),
+    path('shutdown/list/', get_shutdown_commands, name='get_shutdown_commands'),
+    path('shutdown/delete/<int:command_id>/', delete_shutdown_command, name='delete_shutdown_command'),
+    path('shutdown/clear/', clear_all_shutdown_commands, name='clear_all_shutdown_commands'),
+    path('shutdown/page/', shutdown_page, name='shutdown_page'),
+    path('shutdown/send/', send_shutdown_command, name='send_shutdown_command'),
 ] 
