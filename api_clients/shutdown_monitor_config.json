@@ -1,5 +1,5 @@
 {
-    "base_url": "http://localhost:8000/datapost",
+    "base_url": "https://aliyun.ideapool.club/datapost",
     "check_interval": 5,
     "shutdown_file": "shutdown.txt",
     "log_file": "shutdown_monitor.log",
