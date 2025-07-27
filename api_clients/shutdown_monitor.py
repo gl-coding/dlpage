@@ -28,6 +28,7 @@ class ShutdownMonitor:
     def __init__(self, config_file="shutdown_monitor_config.json"):
         self.config = self.load_config(config_file)
         self.cleanup_on_startup()
+        self.clear_interface_on_startup()
         self.setup_logging()
     
     def load_config(self, config_file):
@@ -67,6 +68,30 @@ class ShutdownMonitor:
             
         except Exception as e:
             print(f"⚠️  清理文件时出错: {e}")
+    
+    def clear_interface_on_startup(self):
+        """启动时清空接口数据"""
+        try:
+            print("🧹 清空接口数据...")
+            
+            # 获取当前接口数据
+            commands = self.get_shutdown_commands()
+            
+            if commands:
+                print(f"📋 发现 {len(commands)} 条待清理的命令:")
+                for cmd in commands:
+                    print(f"   - ID {cmd['id']}: {cmd['command']}")
+                
+                # 清空接口数据
+                if self.clear_all_commands():
+                    print("✅ 接口数据清空完成")
+                else:
+                    print("❌ 清空接口数据失败")
+            else:
+                print("📭 接口中暂无关机命令")
+                
+        except Exception as e:
+            print(f"⚠️  清空接口数据时出错: {e}")
     
     def setup_logging(self):
         """设置日志"""
@@ -223,6 +248,7 @@ class ShutdownMonitor:
         self.log(f"⏰ 检查间隔: {self.config['check_interval']} 秒")
         if self.config.get('enable_logging'):
             self.log(f"📝 日志文件: {self.config['log_file']}")
+        self.log("🧹 启动时已清空接口数据")
         self.log("=" * 50)
         
         try:
