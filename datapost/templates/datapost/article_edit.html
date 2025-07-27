@@ -188,7 +188,21 @@
         
         const title = document.getElementById('title').value.trim();
         const content = document.getElementById('content').value.trim();
-        const article_type = document.getElementById('article_type').value.trim();
+        
+        // 获取文章类型（需要检查是使用预设类型还是自定义类型）
+        let article_type = document.getElementById('article_type').value.trim();
+        const select = document.getElementById('article_type_select');
+        const customInput = document.getElementById('article_type_custom');
+        
+        // 如果选择了预设类型，使用选择的值
+        if (select.value && select.value !== 'custom' && select.value !== 'manage' && select.value !== '') {
+            article_type = select.value;
+        } else if (!customInput.classList.contains('d-none') && customInput.value.trim()) {
+            // 如果显示了自定义输入框且有值，使用自定义值
+            article_type = customInput.value.trim();
+        }
+        
+        console.log('文章类型:', article_type, '选择值:', select.value, '自定义值:', customInput.value);
         
         // 前端验证
         if (!title) {
@@ -207,15 +221,27 @@
         }
         
         // 禁用提交按钮，防止重复提交
-        const submitBtn = document.querySelector('.submit-btn');
-        const originalText = submitBtn.textContent;
+        const submitBtn = document.querySelector('button[type="submit"]');
+        const originalHTML = submitBtn.innerHTML;
         submitBtn.disabled = true;
-        submitBtn.textContent = '保存中...';
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>保存中...';
         
         // 获取其他字段
         const audio_url = document.getElementById('audio_url').value.trim();
         const video_url = document.getElementById('video_url').value.trim();
         const remarks = document.getElementById('remarks').value.trim();
+        
+        // 构建数据对象
+        const submitData = {
+            title: title,
+            content: content,
+            article_type: article_type,
+            audio_url: audio_url,
+            video_url: video_url,
+            remarks: remarks
+        };
+        
+        console.log('提交数据:', submitData);
         
         // 发送数据
         fetch('{% url "update_article" article.id %}', {
@@ -223,17 +249,14 @@
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                title: title,
-                content: content,
-                article_type: article_type,
-                audio_url: audio_url,
-                video_url: video_url,
-                remarks: remarks
-            })
+            body: JSON.stringify(submitData)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('响应状态:', response.status);
+            return response.json();
+        })
         .then(data => {
+            console.log('响应数据:', data);
             if (data.status === 'success') {
                 showNotification(data.message, 'success');
                 
@@ -246,12 +269,13 @@
             }
         })
         .catch(error => {
-            showNotification('保存失败：' + error, 'error');
+            console.error('更新文章错误:', error);
+            showNotification('保存失败：' + error.message, 'error');
         })
         .finally(() => {
             // 恢复提交按钮
             submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            submitBtn.innerHTML = originalHTML;
         });
     });
     
@@ -331,6 +355,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const customInput = document.getElementById('article_type_custom');
         const hiddenInput = document.getElementById('article_type');
+        const select = document.getElementById('article_type_select');
         
         customInput.addEventListener('input', function() {
             hiddenInput.value = this.value;
@@ -338,6 +363,9 @@
 
         // 加载隐藏的类型
         loadHiddenTypes();
+        
+        // 确保文章类型字段正确初始化
+        console.log('页面加载时 - 文章类型:', hiddenInput.value, '选择值:', select.value, '自定义值:', customInput.value);
     });
 
     // 获取默认预设类型
