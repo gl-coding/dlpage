@@ -9,17 +9,6 @@ echo.
 REM Start shutdown_monitor.py in background
 echo Starting shutdown_monitor.py in background...
 start /min python shutdown_monitor.py
-if %errorlevel% equ 0 (
-    echo shutdown_monitor.py started successfully in background
-) else (
-    echo Failed to start shutdown_monitor.py
-    echo Please check if Python is installed and shutdown_monitor.py exists
-    pause
-    exit /b 1
-)
-
-REM Wait a moment for the monitor to initialize
-timeout /t 3 /nobreak >nul
 
 echo.
 echo Starting continuous monitoring of shutdown.txt file...
@@ -57,7 +46,7 @@ if exist "shutdown.txt" (
 )
 
 REM Wait 30 seconds before next check
-timeout /t 30 /nobreak >nul
+ping -n 31 127.0.0.1 >nul
 
 REM Jump to loop start
 goto loop 

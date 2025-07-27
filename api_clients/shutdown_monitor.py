@@ -92,32 +92,42 @@ class ShutdownMonitor:
                 
         except Exception as e:
             print(f"⚠️  清空接口数据时出错: {e}")
+            print("这可能是正常的，如果API服务器未运行")
     
     def setup_logging(self):
         """设置日志"""
         if self.config.get('enable_logging', True):
-            logging.basicConfig(
-                level=logging.INFO,
-                format='%(asctime)s - %(levelname)s - %(message)s',
-                handlers=[
-                    logging.FileHandler(self.config['log_file'], encoding='utf-8'),
-                    logging.StreamHandler()
-                ]
-            )
-            self.logger = logging.getLogger(__name__)
+            try:
+                logging.basicConfig(
+                    level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s',
+                    handlers=[
+                        logging.FileHandler(self.config['log_file'], encoding='utf-8', mode='a'),
+                        logging.StreamHandler()
+                    ]
+                )
+                self.logger = logging.getLogger(__name__)
+            except Exception as e:
+                print(f"⚠️  设置日志失败: {e}，将使用控制台输出")
+                self.logger = None
         else:
             self.logger = None
     
     def log(self, message, level='info'):
         """记录日志"""
-        if self.logger:
-            if level == 'info':
-                self.logger.info(message)
-            elif level == 'warning':
-                self.logger.warning(message)
-            elif level == 'error':
-                self.logger.error(message)
-        print(message)
+        try:
+            if self.logger:
+                if level == 'info':
+                    self.logger.info(message)
+                elif level == 'warning':
+                    self.logger.warning(message)
+                elif level == 'error':
+                    self.logger.error(message)
+            print(message)
+        except Exception as e:
+            # 如果日志记录失败，至少确保消息能显示
+            print(f"[{level.upper()}] {message}")
+            print(f"日志记录失败: {e}")
     
     def backup_old_file(self):
         """备份旧文件"""
@@ -164,11 +174,17 @@ class ShutdownMonitor:
     def get_shutdown_commands(self):
         """获取所有关机命令"""
         try:
-            response = requests.get(f"{self.config['base_url']}/shutdown/list/")
+            response = requests.get(f"{self.config['base_url']}/shutdown/list/", timeout=10)
             if response.status_code == 200:
                 result = response.json()
                 if result.get('status') == 'success':
                     return result.get('data', [])
+            return []
+        except requests.exceptions.Timeout:
+            self.log("获取关机命令超时，API服务器可能未运行", 'warning')
+            return []
+        except requests.exceptions.ConnectionError:
+            self.log("无法连接到API服务器，请检查服务器是否运行", 'warning')
             return []
         except Exception as e:
             self.log(f"获取关机命令失败: {e}", 'error')
@@ -177,12 +193,18 @@ class ShutdownMonitor:
     def clear_all_commands(self):
         """清空所有关机命令"""
         try:
-            response = requests.post(f"{self.config['base_url']}/shutdown/clear/")
+            response = requests.post(f"{self.config['base_url']}/shutdown/clear/", timeout=10)
             if response.status_code == 200:
                 result = response.json()
                 if result.get('status') == 'success':
                     self.log(f"✅ 已清空接口数据: {result.get('message')}")
                     return True
+            return False
+        except requests.exceptions.Timeout:
+            self.log("清空命令超时，API服务器可能未运行", 'warning')
+            return False
+        except requests.exceptions.ConnectionError:
+            self.log("无法连接到API服务器，请检查服务器是否运行", 'warning')
             return False
         except Exception as e:
             self.log(f"清空命令失败: {e}", 'error')
@@ -253,10 +275,18 @@ class ShutdownMonitor:
         
         try:
             while True:
-                self.check_and_process()
-                self.log(f"⏳ 等待 {self.config['check_interval']} 秒后再次检查...")
-                self.log("-" * 30)
-                time.sleep(self.config['check_interval'])
+                try:
+                    self.check_and_process()
+                    self.log(f"⏳ 等待 {self.config['check_interval']} 秒后再次检查...")
+                    self.log("-" * 30)
+                    
+                    # 使用更可靠的延时方法
+                    for i in range(self.config['check_interval']):
+                        time.sleep(1)
+                        
+                except Exception as e:
+                    self.log(f"❌ 检查过程中出错: {e}", 'error')
+                    time.sleep(5)  # 出错后等待5秒再继续
                 
         except KeyboardInterrupt:
             self.log("\n🛑 监控已停止")
